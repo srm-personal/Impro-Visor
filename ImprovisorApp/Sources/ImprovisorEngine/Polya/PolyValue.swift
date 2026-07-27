@@ -14,7 +14,7 @@ import Foundation
 /// One element of an S-expression: a symbol, an integer, a floating-point
 /// number, or a nested list. Mirrors the four concrete `Object` types the Java
 /// `polya.Tokenizer` produces (`String`, `Long`, `Double`, `Polylist`).
-public enum PolyValue: Equatable, Hashable, CustomStringConvertible {
+public enum PolyValue: Equatable, Hashable, Sendable, CustomStringConvertible {
     /// A word token — chord names, rule letters, style keywords, `|`, `,`, etc.
     case symbol(String)
     /// An integer token (Java `Long`). Durations and slot counts are integers.

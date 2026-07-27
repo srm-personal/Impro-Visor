@@ -56,18 +56,18 @@ public final class Vocabulary: Sendable {
             guard case let .list(list) = form,
                   list.firstOrNil() == .symbol("chord"),
                   let nameList = list.assoc("name"),
-                  case let .symbol(name) = nameList.second()
+                  case let .symbol(name)? = nameList.secondOrNil()
             else { continue }
 
             if let sameList = list.assoc("same"),
-               case let .symbol(target) = sameList.second() {
+               case let .symbol(target)? = sameList.secondOrNil() {
                 aliases[name] = target
                 continue
             }
 
             let spell = Vocabulary.pitchClasses(list.assoc("spell"))
             let color = Vocabulary.pitchClasses(list.assoc("color"))
-            let family = list.assoc("family").flatMap { $0.second().symbolValue } ?? "unknown"
+            let family = list.assoc("family").flatMap { $0.secondOrNil()?.symbolValue } ?? "unknown"
             forms[name] = ChordForm(name: name, family: family, spell: spell, color: color)
         }
 

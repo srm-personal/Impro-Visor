@@ -73,6 +73,23 @@ public final class Polylist: Equatable, Hashable, CustomStringConvertible, Seque
 
     public func second() -> PolyValue { rest().first() }
     public func third() -> PolyValue { rest().rest().first() }
+
+    /// Safe element access that returns `nil` instead of trapping when the list
+    /// is too short — used by the file parsers, which must tolerate malformed
+    /// forms in the data corpus rather than crash.
+    public func nthOrNil(_ n: Int) -> PolyValue? {
+        var list = self
+        var i = n
+        while i > 0 {
+            if list.isEmpty { return nil }
+            list = list.rest()
+            i -= 1
+        }
+        return list.firstOrNil()
+    }
+
+    public func secondOrNil() -> PolyValue? { nthOrNil(1) }
+    public func thirdOrNil() -> PolyValue? { nthOrNil(2) }
     public func fourth() -> PolyValue { rest().rest().rest().first() }
     public func fifth() -> PolyValue { rest().rest().rest().rest().first() }
     public func sixth() -> PolyValue { rest().rest().rest().rest().rest().first() }
