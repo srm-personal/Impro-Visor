@@ -104,6 +104,8 @@ let tempoArg = setting("--tempo", "tempo").flatMap(Double.init)
 let loop = max(1, Int(setting("--loop", "loop") ?? setting("--choruses", "choruses") ?? "1") ?? 1)
 let outArg = setting("--out", "out")
 let dataArg = setting("--data", "data")
+let soloGrammar = setting("--solo", "solo")
+let soloProgram = UInt8(setting("--solo-program", "solo-program") ?? "66") ?? 66
 let melodyProgram = UInt8(setting("--melody-program", "melody-program") ?? "66") ?? 66
 let compProgram = UInt8(setting("--comp-program", "comp-program") ?? "\(Constants.DEFAULT_PIANO_PROGRAM)") ?? 0
 let noBass = disabled("--no-bass", "bass")
@@ -133,6 +135,9 @@ func printUsage() {
       --loop <n>          Repeat the whole form n times (choruses) for practice.
       --seed <n>          Seed for the pattern choices (each chorus varies).
       --out <file.mid>    Output MIDI file (default: <title>.mid in the current dir).
+      --solo <grammar>    Generate a grammar solo over the changes (name under
+                          grammars/ or a path), e.g. --solo ArtFarmer.
+      --solo-program N    GM program for the solo track (default 66 tenor sax).
       --melody-program N  GM program for melody (default 66 tenor sax; 0 = piano).
       --comp-program N    GM program for comping (default 0 = piano).
       --no-bass/--no-drums/--no-comp/--no-melody   Omit a track.
@@ -283,7 +288,31 @@ func offsetNotes(_ notes: [ScheduledNote], by delta: Int) -> [ScheduledNote] {
 
 let formLen = score.chordPart.count > 0 ? score.chordPart.size : endTick(baseHead)
 
-var bass: [ScheduledNote] = [], comping: [ScheduledNote] = [], drums: [ScheduledNote] = [], melody: [ScheduledNote] = []
+// Optional grammar solo.
+func loadGrammar(_ name: String) -> Grammar? {
+    let direct = expandTilde(name)
+    if FileManager.default.fileExists(atPath: direct) { return try? GrammarParser.parse(contentsOf: URL(fileURLWithPath: direct)) }
+    let byName = dataURL("grammars/\(name).grammar")
+    return try? GrammarParser.parse(contentsOf: byName)
+}
+let grammar: Grammar? = soloGrammar.flatMap { name in
+    if let g = loadGrammar(name), !g.rules.isEmpty { return g }
+    FileHandle.standardError.write(Data("warning: grammar '\(name)' not found; skipping solo.\n".utf8))
+    return nil
+}
+
+func soloNotes(_ part: MelodyPart, channel: UInt8, velocity: Int = 95) -> [ScheduledNote] {
+    var notes: [ScheduledNote] = []; var t = 0
+    for event in part.events {
+        if case let .note(n) = event {
+            notes.append(ScheduledNote(pitch: n.pitch, velocity: velocity, startTick: t, duration: n.duration, channel: channel))
+        }
+        t += event.duration
+    }
+    return notes
+}
+
+var bass: [ScheduledNote] = [], comping: [ScheduledNote] = [], drums: [ScheduledNote] = [], melody: [ScheduledNote] = [], solo: [ScheduledNote] = []
 for chorus in 0..<loop {
     let offset = chorus * formLen
     if score.chordPart.count > 0 {
@@ -292,6 +321,10 @@ for chorus in 0..<loop {
         bass += offsetNotes(acc.bass, by: offset)
         comping += offsetNotes(acc.chords, by: offset)
         drums += offsetNotes(acc.drums, by: offset)
+        if let grammar {
+            let line = SoloGenerator(grammar: grammar).generate(chords: score.chordPart, seed: seed &+ UInt64(chorus) &+ 1000)
+            solo += offsetNotes(soloNotes(line, channel: 3), by: offset)
+        }
     }
     melody += offsetNotes(baseHead, by: offset)
 }
@@ -314,7 +347,7 @@ if score.chordPart.count > 0 {
 }
 print("""
   ── generated (\(loop)× chorus) ──
-  bass \(bass.count)   comping \(comping.count)   drums \(drums.count)   melody \(melody.count)
+  bass \(bass.count)   comping \(comping.count)   drums \(drums.count)   melody \(melody.count)   solo \(solo.count)
 """)
 
 // MARK: - Write the MIDI file
@@ -333,6 +366,9 @@ if !noDrums, !drums.isEmpty {
 }
 if !noMelody, !melody.isEmpty {
     tracks.append(MIDITrack(name: "Melody", channel: 2, program: melodyProgram, notes: melody))
+}
+if !solo.isEmpty {
+    tracks.append(MIDITrack(name: "Solo", channel: 3, program: soloProgram, notes: solo))
 }
 
 guard !tracks.isEmpty else {
