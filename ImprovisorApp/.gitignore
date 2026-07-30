@@ -3,3 +3,8 @@
 *.xcodeproj/xcuserdata/
 *.xcworkspace/xcuserdata/
 DerivedData/
+
+# Generated/auditioning artifacts (not source)
+*.mid
+*.tune
+*.band/

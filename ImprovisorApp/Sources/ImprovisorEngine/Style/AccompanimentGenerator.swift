@@ -27,6 +27,12 @@ public struct Accompaniment: Equatable, Sendable {
     public var chords: [ScheduledNote]
     public var drums: [ScheduledNote]
 
+    public init(bass: [ScheduledNote], chords: [ScheduledNote], drums: [ScheduledNote]) {
+        self.bass = bass
+        self.chords = chords
+        self.drums = drums
+    }
+
     public var allNotes: [ScheduledNote] { bass + chords + drums }
 
     public var bassEvents: [MIDIEvent] { bass.toMIDIEvents() }
