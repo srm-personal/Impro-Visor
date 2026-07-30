@@ -92,6 +92,9 @@ if let fileArg {
 
 let wantsHelp = hasFlag("--help") || hasFlag("-h")
 let listStyles = hasFlag("--list-styles")
+let listMIDI = hasFlag("--list-midi")
+let playLive = hasFlag("--play")
+let midiOut = setting("--midi-out", "midi-out")
 let styleName = setting("--style", "style") ?? "swing"
 let chordsArg = setting("--chords", "chords")
 let melodyArg = setting("--melody", "melody")
@@ -134,7 +137,12 @@ func printUsage() {
       --comp-program N    GM program for comping (default 0 = piano).
       --no-bass/--no-drums/--no-comp/--no-melody   Omit a track.
       --data <path>       Repo root holding vocab/, styles/, leadsheets/.
+      --play              Play live via CoreMIDI (e.g. to a hardware keyboard)
+                          instead of only writing a file.
+      --midi-out <name>   Destination name (substring) for --play, e.g. "FP-90X".
+                          Defaults to the first available destination.
       --list-styles       List available styles and exit.
+      --list-midi         List CoreMIDI output destinations and exit.
       -h, --help          Show this help.
 
     TUNE FILE (--file) — `key: value` lines, `#` comments:
@@ -147,6 +155,18 @@ func printUsage() {
 }
 
 if wantsHelp { printUsage(); exit(0) }
+
+if listMIDI {
+    let dests = LiveMIDIPlayer.destinations()
+    if dests.isEmpty {
+        print("No CoreMIDI output destinations found. Connect your keyboard via USB and try again.")
+    } else {
+        print("\(dests.count) MIDI output destination(s):")
+        for d in dests { print("  [\(d.index)] \(d.name)") }
+        print("\nPlay to one with:  --play --midi-out \"<name substring>\"")
+    }
+    exit(0)
+}
 
 // MARK: - Locate the Impro-Visor data directories
 
@@ -318,6 +338,27 @@ if !noMelody, !melody.isEmpty {
 guard !tracks.isEmpty else {
     FileHandle.standardError.write(Data("error: all tracks were disabled — nothing to write.\n".utf8))
     exit(1)
+}
+
+// Live playback to a hardware keyboard (uses the instrument's own sounds).
+if playLive {
+    guard let player = LiveMIDIPlayer(destinationHint: midiOut) else {
+        let dests = LiveMIDIPlayer.destinations()
+        if dests.isEmpty {
+            FileHandle.standardError.write(Data("error: no CoreMIDI destinations — connect your keyboard via USB.\n".utf8))
+        } else {
+            let names = dests.map { "\"\($0.name)\"" }.joined(separator: ", ")
+            FileHandle.standardError.write(Data("error: no MIDI destination matching \(midiOut.map { "'\($0)'" } ?? "(any)"). Available: \(names)\n".utf8))
+        }
+        exit(1)
+    }
+    print("""
+      ── playing live ──
+      → \(player.destinationName)   (Ctrl-C to stop)
+    ────────────────────────────────────────────────────────
+    """)
+    player.play(tracks: tracks, tempoBPM: score.tempo)
+    exit(0)
 }
 
 func slugify(_ s: String) -> String {

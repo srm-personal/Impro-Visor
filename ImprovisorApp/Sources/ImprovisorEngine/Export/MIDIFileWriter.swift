@@ -66,6 +66,16 @@ public enum MIDIFileWriter {
 
     private static func conductorTrack(tempoBPM: Double) -> Data {
         var body = Data()
+
+        // "GM System On" SysEx so hardware SMF players (e.g. a Roland FP-90X
+        // reading from a USB stick) enter General MIDI mode — drums on channel
+        // 10, program changes honored per channel.
+        body.appendVLQ(0)
+        body.append(contentsOf: [0xF0])
+        let gmOn: [UInt8] = [0x7E, 0x7F, 0x09, 0x01, 0xF7]
+        body.appendVLQ(UInt32(gmOn.count))
+        body.append(contentsOf: gmOn)
+
         let usPerQuarter = UInt32(60_000_000.0 / max(1, tempoBPM))
         body.appendVLQ(0)
         body.append(contentsOf: [0xFF, 0x51, 0x03])
