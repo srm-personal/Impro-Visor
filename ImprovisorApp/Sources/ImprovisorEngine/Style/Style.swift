@@ -57,6 +57,9 @@ public struct Style: Equatable, Sendable {
     public var swing: Double
     public var compSwing: Double
     public var voicingType: String
+    /// Name of the `.fv` preset in `voicings/` used by the algorithmic voicer when
+    /// `voicingType == "custom"`. Defaults to `default.fv`.
+    public var voicingFileName: String
 
     /// Register bounds, as pitch-class/octave note names (e.g. `c`, `g--`, `d-`).
     public var bassHigh: String
@@ -74,6 +77,7 @@ public struct Style: Equatable, Sendable {
         swing: Double = 0.5,
         compSwing: Double = 0.5,
         voicingType: String = "closed",
+        voicingFileName: String = "default.fv",
         bassHigh: String = "c",
         bassLow: String = "g--",
         bassBase: String = "e--",
@@ -87,6 +91,7 @@ public struct Style: Equatable, Sendable {
         self.swing = swing
         self.compSwing = compSwing
         self.voicingType = voicingType
+        self.voicingFileName = voicingFileName
         self.bassHigh = bassHigh
         self.bassLow = bassLow
         self.bassBase = bassBase

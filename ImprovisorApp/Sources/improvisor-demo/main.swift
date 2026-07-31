@@ -218,6 +218,13 @@ func loadStyle(_ name: String) -> Style {
 }
 let style = loadStyle(styleName)
 
+// The algorithmic voicer's preset (used for `voicing-type custom` styles and as
+// the vocab fallback). Loaded from the style's named `.fv` in voicings/.
+func loadVoicingSettings(for style: Style) -> VoicingSettings {
+    (try? VoicingParser.parse(contentsOf: dataURL("voicings/\(style.voicingFileName)"))) ?? VoicingSettings()
+}
+let voicingSettings = loadVoicingSettings(for: style)
+
 // MARK: - Build the score
 
 func findLeadsheet(_ query: String) -> URL? {
@@ -317,7 +324,7 @@ for chorus in 0..<loop {
     let offset = chorus * formLen
     if score.chordPart.count > 0 {
         // Re-generate each chorus with a varied seed so loops aren't identical.
-        let acc = AccompanimentGenerator(style: style).generate(chordPart: score.chordPart, seed: seed &+ UInt64(chorus))
+        let acc = AccompanimentGenerator(style: style, voicingSettings: voicingSettings).generate(chordPart: score.chordPart, seed: seed &+ UInt64(chorus))
         bass += offsetNotes(acc.bass, by: offset)
         comping += offsetNotes(acc.chords, by: offset)
         drums += offsetNotes(acc.drums, by: offset)

@@ -54,8 +54,15 @@ public struct AccompanimentGenerator {
     private let chordLow: Int
     private let chordHigh: Int
 
-    public init(style: Style) {
+    /// Settings for the algorithmic voicing generator (used when the style's
+    /// `voicing-type` is `custom`, and as the fallback voicer). The engine is
+    /// pure, so the caller supplies these — typically parsed from the style's
+    /// `.fv` preset (`style.voicingFileName`) via `VoicingParser`.
+    private let voicingSettings: VoicingSettings
+
+    public init(style: Style, voicingSettings: VoicingSettings = VoicingSettings()) {
         self.style = style
+        self.voicingSettings = voicingSettings
         self.bassLow = Register.midi(ofNoteName: style.bassLow, fallback: 43)
         self.bassHigh = Register.midi(ofNoteName: style.bassHigh, fallback: 60)
         self.bassBase = Register.midi(ofNoteName: style.bassBase, fallback: 43)
@@ -157,9 +164,18 @@ public struct AccompanimentGenerator {
     private func generateChords(_ chordPart: ChordPart, _ rng: inout SeededGenerator) -> [ScheduledNote] {
         var notes: [ScheduledNote] = []
 
+        // Voice-leading state + the algorithmic voicer (also the vocab fallback).
+        var previousVoicing: [Int] = []
+        var hand = HandManager(settings: voicingSettings)
+        var vgen = VoicingGenerator()
+        vgen.apply(settings: voicingSettings)
+        let useGenerator = style.voicingType == "custom"
+
         for entry in chordPart.entries {
             let chord = entry.symbol
-            let voicing = buildVoicing(chord)
+            let voicing = voiceChord(chord, previous: previousVoicing, useGenerator: useGenerator,
+                                     hand: &hand, vgen: &vgen, &rng)
+            if !voicing.isEmpty { previousVoicing = voicing }
             var t = entry.start
             var remaining = entry.duration
 
@@ -188,8 +204,49 @@ public struct AccompanimentGenerator {
         return notes
     }
 
+    /// Choose a voicing for one chord. `custom` styles use the algorithmic
+    /// generator; all others use the vocabulary voicer, falling back to the
+    /// generator and finally the naïve stack so a comp is never dropped.
+    private func voiceChord(_ chord: ChordSymbol, previous: [Int], useGenerator: Bool,
+                            hand: inout HandManager, vgen: inout VoicingGenerator,
+                            _ rng: inout SeededGenerator) -> [Int] {
+        if useGenerator {
+            if let v = algorithmicVoicing(chord, previous: previous, hand: &hand, vgen: &vgen, &rng) {
+                return v
+            }
+            return buildVoicing(chord)
+        }
+        if let v = VocabularyVoicer.findVoicing(chord: chord, previous: previous,
+                                                low: chordLow, high: chordHigh,
+                                                type: style.voicingType, rng: &rng) {
+            return v
+        }
+        if let v = algorithmicVoicing(chord, previous: previous, hand: &hand, vgen: &vgen, &rng) {
+            return v
+        }
+        return buildVoicing(chord)
+    }
+
+    /// Run the algorithmic generator for one chord, returning sorted MIDI notes
+    /// (or `nil` if it produced nothing).
+    private func algorithmicVoicing(_ chord: ChordSymbol, previous: [Int],
+                                    hand: inout HandManager, vgen: inout VoicingGenerator,
+                                    _ rng: inout SeededGenerator) -> [Int]? {
+        hand.repositionHands(rng: &rng)
+        vgen.apply(hand: &hand, rng: &rng)
+        vgen.root = chord.root.semitones
+        vgen.color = chord.colorTones.map { Constants.CMIDI + $0.semitones }
+        let priorityTones = chord.form?.priorityTones(root: chord.root) ?? chord.chordTones
+        let tones = priorityTones.isEmpty ? chord.chordTones : priorityTones
+        vgen.priority = tones.map { Constants.CMIDI + $0.semitones }
+        vgen.previousVoicing = previous.isEmpty ? nil : previous
+        vgen.calculate(rng: &rng)
+        let c = vgen.chord.sorted()
+        return c.isEmpty ? nil : c
+    }
+
     /// A simple closed voicing: the chord tones stacked ascending from the
-    /// bottom of the chord register. (Step 6's voicing engine refines this.)
+    /// bottom of the chord register. Last-resort fallback for `voiceChord`.
     func buildVoicing(_ chord: ChordSymbol) -> [Int] {
         let tones = chord.chordTones.map(\.semitones)
         guard !tones.isEmpty else { return [] }

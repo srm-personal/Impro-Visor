@@ -29,6 +29,21 @@ public struct ChordForm: Equatable, Sendable {
     public let spell: [PitchClass]
     /// Color tones as pitch classes (C-rooted), from `color`.
     public let color: [PitchClass]
+    /// Priority tones as pitch classes (C-rooted), from `priority`, in the order
+    /// listed (most important first). Used by both voicers.
+    public let priority: [PitchClass]
+    /// The named voicings (C-rooted absolute MIDI), from `voicings`.
+    public let voicings: [Voicing]
+
+    public init(name: String, family: String, spell: [PitchClass], color: [PitchClass],
+                priority: [PitchClass] = [], voicings: [Voicing] = []) {
+        self.name = name
+        self.family = family
+        self.spell = spell
+        self.color = color
+        self.priority = priority
+        self.voicings = voicings
+    }
 
     /// The chord tones transposed so the chord's root is `root`.
     public func chordTones(root: PitchClass) -> [PitchClass] {
@@ -38,6 +53,16 @@ public struct ChordForm: Equatable, Sendable {
     /// The color tones transposed to the given root.
     public func colorTones(root: PitchClass) -> [PitchClass] {
         color.map { $0.transposed(by: root.semitones) }
+    }
+
+    /// The priority tones transposed to the given root, in priority order.
+    public func priorityTones(root: PitchClass) -> [PitchClass] {
+        priority.map { $0.transposed(by: root.semitones) }
+    }
+
+    /// The named voicings transposed so the chord's root is `root`.
+    public func voicings(root: PitchClass) -> [Voicing] {
+        voicings.map { $0.transposed(by: root.semitones) }
     }
 }
 
@@ -67,8 +92,11 @@ public final class Vocabulary: Sendable {
 
             let spell = Vocabulary.pitchClasses(list.assoc("spell"))
             let color = Vocabulary.pitchClasses(list.assoc("color"))
+            let priority = Vocabulary.pitchClasses(list.assoc("priority"))
+            let voicings = Vocabulary.voicings(list.assoc("voicings"))
             let family = list.assoc("family").flatMap { $0.secondOrNil()?.symbolValue } ?? "unknown"
-            forms[name] = ChordForm(name: name, family: family, spell: spell, color: color)
+            forms[name] = ChordForm(name: name, family: family, spell: spell, color: color,
+                                    priority: priority, voicings: voicings)
         }
 
         self.forms = forms
@@ -86,6 +114,29 @@ public final class Vocabulary: Sendable {
         guard let list else { return [] }
         return list.rest().toArray().compactMap { value in
             value.symbolValue.flatMap { PitchClass.parse($0) }
+        }
+    }
+
+    /// Parse a `(notes e-8 g-8 c8)` / `(extension …)` sub-list into absolute MIDI
+    /// pitches, dropping the leading keyword.
+    private static func midiNotes(_ list: Polylist?) -> [Int] {
+        guard let list else { return [] }
+        return list.rest().toArray().compactMap { value in
+            value.symbolValue.flatMap { NoteSymbol.parse($0)?.note?.pitch }
+        }
+    }
+
+    /// Parse a `(voicings (id (type t)(notes …)(extension …)) …)` sub-list.
+    private static func voicings(_ list: Polylist?) -> [Voicing] {
+        guard let list else { return [] }
+        return list.rest().toArray().compactMap { entry -> Voicing? in
+            guard case let .list(v) = entry,
+                  case let .symbol(name)? = v.firstOrNil()
+            else { return nil }
+            let type = v.assoc("type").flatMap { $0.secondOrNil()?.symbolValue } ?? ""
+            let notes = midiNotes(v.assoc("notes"))
+            let ext = midiNotes(v.assoc("extension"))
+            return Voicing(name: name, type: type, notes: notes, ext: ext)
         }
     }
 

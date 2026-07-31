@@ -36,6 +36,7 @@ public enum StyleParser {
             case "swing": style.swing = rest.firstOrNil()?.doubleValue ?? style.swing
             case "comp-swing": style.compSwing = rest.firstOrNil()?.doubleValue ?? style.compSwing
             case "voicing-type": style.voicingType = rest.firstOrNil()?.description ?? style.voicingType
+            case "voicing-name": style.voicingFileName = rest.firstOrNil()?.description ?? style.voicingFileName
             case "bass-high": style.bassHigh = rest.firstOrNil()?.description ?? style.bassHigh
             case "bass-low": style.bassLow = rest.firstOrNil()?.description ?? style.bassLow
             case "bass-base": style.bassBase = rest.firstOrNil()?.description ?? style.bassBase
