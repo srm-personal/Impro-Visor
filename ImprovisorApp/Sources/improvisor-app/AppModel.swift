@@ -20,6 +20,11 @@ enum BackendKind: String, CaseIterable, Identifiable {
 @MainActor
 final class AppModel: ObservableObject {
     // Inputs.
+    @Published var title = ""
+    @Published var composer = ""
+    @Published var keyIndex = 0
+    @Published var meterNumerator = 4
+    @Published var meterDenominator = 4
     @Published var chordText = "Dm7 | G7 | Cmaj7 | Cmaj7"
     @Published var styleName = "swing"
     @Published var tempo = 160.0
@@ -166,11 +171,37 @@ final class AppModel: ObservableObject {
     func openLeadsheet(_ url: URL) {
         loadedLeadsheet = url
         tracks = []
-        // Reflect the tune's own tempo in the slider (still adjustable).
-        if let loaded = library.score(atLeadsheet: url), loaded.tempo > 0 {
-            tempo = min(300, max(60, loaded.tempo))
+        // Populate the editable fields from the tune (all still adjustable).
+        if let loaded = library.score(atLeadsheet: url) {
+            if loaded.tempo > 0 { tempo = min(300, max(60, loaded.tempo)) }
+            title = loaded.title
+            composer = loaded.composer
+            keyIndex = loaded.key.index
+            meterNumerator = loaded.meter.numerator
+            meterDenominator = loaded.meter.denominator
         }
         status = "Loaded \(url.lastPathComponent) — press Generate."
+    }
+
+    /// Serialize the current tune (metadata + chords) to a `.ls` file. Uses the
+    /// opened leadsheet's chords if one is loaded, otherwise the inline text.
+    /// Melody is not written yet (that comes with the notation editor).
+    func saveLeadsheet(to url: URL) {
+        let meter = Meter(meterNumerator, meterDenominator)
+        let chords: String
+        if let loaded = loadedLeadsheet, let score = library.score(atLeadsheet: loaded) {
+            chords = LeadsheetWriter.progressionText(score.chordPart, meter: score.meter)
+        } else {
+            chords = chordText
+        }
+        let text = LeadsheetWriter.leadsheet(title: title, composer: composer, meter: meter,
+                                             key: keyIndex, tempo: tempo, style: styleName, chords: chords)
+        do {
+            try text.write(to: url, atomically: true, encoding: .utf8)
+            status = "Saved \(url.lastPathComponent)"
+        } catch {
+            status = "Save failed: \(error.localizedDescription)"
+        }
     }
 
     func clearLeadsheet() {

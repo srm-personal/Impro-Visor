@@ -36,7 +36,7 @@ struct ContentView: View {
     private var progressionSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Progression").font(.headline)
+                Text("Leadsheet").font(.headline)
                 Spacer()
                 if let name = model.loadedLeadsheet?.lastPathComponent {
                     Label(name, systemImage: "doc.text")
@@ -44,11 +44,17 @@ struct ContentView: View {
                     Button("Use inline chords") { model.clearLeadsheet() }
                         .buttonStyle(.link)
                 }
-                Button("Open leadsheet…") { openLeadsheet() }
+                Button("Open…") { openLeadsheet() }
+                Button("Save…") { saveLeadsheet() }
+            }
+            HStack {
+                TextField("Title", text: $model.title).textFieldStyle(.roundedBorder)
+                TextField("Composer", text: $model.composer).textFieldStyle(.roundedBorder)
             }
             TextField("Dm7 | G7 | Cmaj7 | Cmaj7", text: $model.chordText, axis: .vertical)
                 .textFieldStyle(.roundedBorder)
-                .lineLimit(1...3)
+                .lineLimit(1...4)
+                .font(.system(.body, design: .monospaced))
                 .disabled(model.loadedLeadsheet != nil)
                 .help("Bars separated by | , '/' repeats the previous chord.")
         }
@@ -81,6 +87,18 @@ struct ContentView: View {
                 Stepper("\(model.loops)", value: $model.loops, in: 1...16).frame(maxWidth: 120)
                 Text("Seed")
                 Stepper("\(model.seed)", value: $model.seed, in: 0...9999).frame(maxWidth: 120)
+            }
+            GridRow {
+                Text("Key")
+                Stepper(keyLabel, value: $model.keyIndex, in: -7...7).frame(maxWidth: 120)
+                Text("Meter")
+                HStack(spacing: 4) {
+                    Stepper("\(model.meterNumerator)", value: $model.meterNumerator, in: 1...12)
+                    Text("/").foregroundStyle(.secondary)
+                    Picker("", selection: $model.meterDenominator) {
+                        ForEach([2, 4, 8], id: \.self) { Text("\($0)").tag($0) }
+                    }.labelsHidden().frame(width: 60)
+                }.frame(maxWidth: 200)
             }
             GridRow {
                 Text("Output")
@@ -140,6 +158,12 @@ struct ContentView: View {
         }
     }
 
+    private var keyLabel: String {
+        let n = model.keyIndex
+        if n == 0 { return "0 (C)" }
+        return n > 0 ? "\(n)♯" : "\(-n)♭"
+    }
+
     // MARK: Panels
 
     private func openLeadsheet() {
@@ -153,7 +177,22 @@ struct ContentView: View {
     private func exportMIDI() {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [UTType(filenameExtension: "mid") ?? .data]
-        panel.nameFieldStringValue = (model.loadedLeadsheet?.deletingPathExtension().lastPathComponent ?? "improvisor") + ".mid"
+        panel.nameFieldStringValue = defaultBaseName() + ".mid"
         if panel.runModal() == .OK, let url = panel.url { model.export(to: url) }
+    }
+
+    private func saveLeadsheet() {
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [UTType(filenameExtension: "ls") ?? .plainText]
+        panel.nameFieldStringValue = defaultBaseName() + ".ls"
+        if panel.runModal() == .OK, let url = panel.url { model.saveLeadsheet(to: url) }
+    }
+
+    private func defaultBaseName() -> String {
+        let trimmed = model.title.trimmingCharacters(in: .whitespaces)
+        if !trimmed.isEmpty {
+            return trimmed.replacingOccurrences(of: " ", with: "")
+        }
+        return model.loadedLeadsheet?.deletingPathExtension().lastPathComponent ?? "improvisor"
     }
 }
