@@ -336,6 +336,15 @@ for chorus in 0..<loop {
     melody += offsetNotes(baseHead, by: offset)
 }
 
+// Apply swing feel: accompaniment uses the style's comp-swing, the melody/solo
+// its (melody) swing. The generators emit straight positions; this is the pass
+// that re-times the offbeat eighths. (swing 0.5 is a no-op.)
+bass = Groove.swung(bass, swing: style.compSwing)
+comping = Groove.swung(comping, swing: style.compSwing)
+drums = Groove.swung(drums, swing: style.compSwing)
+melody = Groove.swung(melody, swing: style.swing)
+solo = Groove.swung(solo, swing: style.swing)
+
 // MARK: - Summary
 
 let pcNames = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]
