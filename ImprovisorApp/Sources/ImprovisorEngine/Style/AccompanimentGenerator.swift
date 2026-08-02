@@ -178,11 +178,20 @@ public struct AccompanimentGenerator {
             if !voicing.isEmpty { previousVoicing = voicing }
             var t = entry.start
             var remaining = entry.duration
+            var beginning = true
 
             while remaining > 0 {
                 guard let pattern = selectPattern(style.chordPatterns, fitting: remaining, &rng) else {
                     strike(voicing, at: t, duration: remaining, velocity: 75, into: &notes)
                     break
+                }
+                // Push (anticipation): the FIRST pattern of a chord may be pulled
+                // earlier, borrowing from the previous chord (port of Style
+                // makeChords' `time -= deltaT`). Clamped so it can't precede tick 0.
+                if beginning {
+                    let push = pattern.push.map { Duration.slots($0) } ?? 0
+                    if push > 0, t - push >= 0 { t -= push }
+                    beginning = false
                 }
                 var volume = 75
                 for token in pattern.rules {
