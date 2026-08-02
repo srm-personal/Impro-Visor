@@ -8,7 +8,8 @@ let package = Package(
     ],
     products: [
         .library(name: "ImprovisorEngine", targets: ["ImprovisorEngine"]),
-        .executable(name: "improvisor-demo", targets: ["improvisor-demo"])
+        .executable(name: "improvisor-demo", targets: ["improvisor-demo"]),
+        .executable(name: "improvisor-app", targets: ["improvisor-app"])
     ],
     targets: [
         .target(
@@ -19,6 +20,11 @@ let package = Package(
             name: "improvisor-demo",
             dependencies: ["ImprovisorEngine"],
             path: "Sources/improvisor-demo"
+        ),
+        .executableTarget(
+            name: "improvisor-app",
+            dependencies: ["ImprovisorEngine"],
+            path: "Sources/improvisor-app"
         ),
         .testTarget(
             name: "ImprovisorEngineTests",
