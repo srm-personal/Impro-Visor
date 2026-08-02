@@ -38,7 +38,6 @@ final class AppModel: ObservableObject {
 
     let library: DataLibrary
     private var tracks: [MIDITrack] = []
-    private var tempoForTracks = 160.0
     private var player: SequencePlayer?
     private var backend: InstrumentBackend?
 
@@ -76,7 +75,6 @@ final class AppModel: ObservableObject {
             return
         }
         chordSummary = chordPart.entries.map { "\($0.symbol.name)" }
-        tempoForTracks = loadedLeadsheet != nil ? score.tempo : tempo
 
         let formLen = chordPart.count > 0 ? chordPart.size : (head.map { $0.startTick + $0.duration }.max() ?? 0)
         let grammar = soloGrammar == "None" ? nil : library.grammar(soloGrammar)
@@ -121,7 +119,7 @@ final class AppModel: ObservableObject {
         trackSummary = "bass \(bass.count) · comp \(comping.count) · drums \(drums.count)"
             + (solo.isEmpty ? "" : " · solo \(solo.count)")
             + (melody.isEmpty ? "" : " · melody \(melody.count)")
-        status = "Generated \(chordPart.count) chords · \(loops)× chorus · \(Int(tempoForTracks)) bpm"
+        status = "Generated \(chordPart.count) chords · \(loops)× chorus · \(Int(tempo)) bpm"
     }
 
     // MARK: - Transport
@@ -144,7 +142,7 @@ final class AppModel: ObservableObject {
         self.player = player
         isPlaying = true
         status = "Playing…"
-        player.play(tracks: tracks, tempoBPM: tempoForTracks)
+        player.play(tracks: tracks, tempoBPM: tempo)
     }
 
     func stop() {
@@ -158,7 +156,7 @@ final class AppModel: ObservableObject {
         if tracks.isEmpty { generate() }
         guard !tracks.isEmpty else { status = "Nothing to export."; return }
         do {
-            try MIDIFileWriter.write(tracks: tracks, tempoBPM: tempoForTracks, to: url)
+            try MIDIFileWriter.write(tracks: tracks, tempoBPM: tempo, to: url)
             status = "Exported \(url.lastPathComponent)"
         } catch {
             status = "Export failed: \(error.localizedDescription)"
@@ -168,6 +166,10 @@ final class AppModel: ObservableObject {
     func openLeadsheet(_ url: URL) {
         loadedLeadsheet = url
         tracks = []
+        // Reflect the tune's own tempo in the slider (still adjustable).
+        if let loaded = library.score(atLeadsheet: url), loaded.tempo > 0 {
+            tempo = min(300, max(60, loaded.tempo))
+        }
         status = "Loaded \(url.lastPathComponent) — press Generate."
     }
 
