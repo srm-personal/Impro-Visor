@@ -15,6 +15,7 @@ import ImprovisorEngine
 public struct DocumentView: View {
     @ObservedObject var document: LeadsheetDocument
     @StateObject private var playback: PlaybackController
+    @StateObject private var editor: EditorController
     @Environment(\.undoManager) private var undoManager
     @State private var chordText = ""
     @State private var showChordText = false
@@ -27,7 +28,9 @@ public struct DocumentView: View {
 
     public init(document: LeadsheetDocument, library: DataLibrary = .shared) {
         self.document = document
-        _playback = StateObject(wrappedValue: PlaybackController(library: library))
+        let playback = PlaybackController(library: library)
+        _playback = StateObject(wrappedValue: playback)
+        _editor = StateObject(wrappedValue: EditorController(document: document, playback: playback))
     }
 
     private var library: DataLibrary { playback.library }
@@ -35,12 +38,8 @@ public struct DocumentView: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             header
-            StaveView(score: document.score, part: 0, options: staveOptions,
-                      overlay: StaveRenderer.Overlay(playheadSlot: playback.isPlaying ? playback.positionSlot % max(1, document.score.chordPart.size) : nil))
-                .frame(minHeight: 260)
-                .clipShape(RoundedRectangle(cornerRadius: 6))
-                .overlay(RoundedRectangle(cornerRadius: 6).stroke(.quaternary))
-                .accessibilityIdentifier("stave")
+            EditorView(editor: editor)
+                .frame(minHeight: 320)
             DisclosureGroup("Chords as text", isExpanded: $showChordText) { chordsSection }
             settings
             Divider()
@@ -54,7 +53,8 @@ public struct DocumentView: View {
             chordText = LeadsheetWriter.progressionText(document.score.chordPart, meter: document.score.meter)
             if document.score.tempo > 0 { playback.tempo = min(300, max(30, document.score.tempo)) }
         }
-        .onDisappear { playback.stop() }
+        .onDisappear { playback.shutdown() }
+        .onAppear { editor.playback = playback }
     }
 
     // MARK: Sections
@@ -116,8 +116,10 @@ public struct DocumentView: View {
 
     private var transport: some View {
         HStack(spacing: 12) {
-            Button { playback.play(score: document.score) } label: { Label("Play", systemImage: "play.fill") }
-                .disabled(playback.isPlaying).keyboardShortcut(.space, modifiers: []).accessibilityIdentifier("play")
+            Button { playback.togglePlayPause(score: document.score) } label: {
+                Label(playback.isPlaying && !playback.isPaused ? "Pause" : "Play",
+                      systemImage: playback.isPlaying && !playback.isPaused ? "pause.fill" : "play.fill")
+            }.accessibilityIdentifier("play")
             Button { playback.stop() } label: { Label("Stop", systemImage: "stop.fill") }
                 .disabled(!playback.isPlaying).accessibilityIdentifier("stop")
             if playback.isPlaying {

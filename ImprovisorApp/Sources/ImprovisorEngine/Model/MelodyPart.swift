@@ -11,7 +11,7 @@
 import Foundation
 
 public struct MelodyPart: Equatable, Sendable {
-    public private(set) var events: [MusicEvent]
+    public var events: [MusicEvent]
     /// Leadsheet `(part …)` header metadata for this part.
     public var info: PartInfo
 
