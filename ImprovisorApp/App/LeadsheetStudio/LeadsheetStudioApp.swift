@@ -17,6 +17,7 @@ struct LeadsheetStudioApp: App {
         }
         .commands {
             SidebarCommands()
+            EditorCommands()
         }
     }
 }

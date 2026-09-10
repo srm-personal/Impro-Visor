@@ -37,7 +37,12 @@ public struct EditorView: View {
                         onClick: { point, mods in focusToken += 1; editor.click(at: point, modifiers: mods) },
                         onDragBegan: { point in focusToken += 1; editor.beginDrag(at: point) },
                         onDragChanged: { point in editor.drag(to: point) },
-                        onDragEnded: { editor.endDrag() }))
+                        onDragEnded: { editor.endDrag() }),
+                      decorations: { layout in
+                        AnyView(ChordRowView(editor: editor, layout: layout,
+                                             editingMeasure: $editor.editingChordMeasure,
+                                             onDone: { focusToken += 1 }))
+                      })
                 .background(KeyEventHost(controller: editor, focusToken: focusToken))
                 .clipShape(RoundedRectangle(cornerRadius: 6))
                 .overlay(RoundedRectangle(cornerRadius: 6).stroke(.quaternary))
@@ -45,6 +50,10 @@ public struct EditorView: View {
                 .accessibilityValue(NoteSerializer.tokens(editor.melody).joined(separator: " "))
             HStack {
                 Toggle("Piano", isOn: $showPiano).toggleStyle(.checkbox).font(.caption)
+                Toggle("MIDI in", isOn: $editor.midiEnabled).toggleStyle(.checkbox).font(.caption)
+                    .help("Enter notes from a MIDI keyboard (\(MIDIInputSource.sourceCount) source(s))")
+                Button("Chords…") { editor.perform(.focusChords) }.controlSize(.small).font(.caption)
+                    .help("Edit the chords of the current bar (⌘⇧K)")
                 Spacer()
                 Text(cursorDescription).font(.caption).monospacedDigit().foregroundStyle(.secondary)
             }
@@ -54,6 +63,8 @@ public struct EditorView: View {
         }
         .onAppear { editor.undoManager = undoManager }
         .onChange(of: undoManager) { _, new in editor.undoManager = new }
+        .onChange(of: editor.staveFocusRequest) { _, _ in focusToken += 1 }
+        .focusedSceneObject(editor)
     }
 
     private var cursorDescription: String {

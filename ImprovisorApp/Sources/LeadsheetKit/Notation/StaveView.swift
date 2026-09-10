@@ -62,6 +62,8 @@ public struct StaveView: View {
     public var overlay: StaveRenderer.Overlay
     public var onLayout: ((LayoutDocument) -> Void)?
     public var interaction: StaveInteraction?
+    /// Extra views laid over the stave in its coordinate space (e.g. chord cells).
+    public var decorations: ((LayoutDocument) -> AnyView)?
     @State private var dragging = false
 
     @Environment(\.colorScheme) private var colorScheme
@@ -70,13 +72,15 @@ public struct StaveView: View {
     public init(score: Score, part: Int = 0, options: StaveOptions = StaveOptions(),
                 overlay: StaveRenderer.Overlay = StaveRenderer.Overlay(),
                 onLayout: ((LayoutDocument) -> Void)? = nil,
-                interaction: StaveInteraction? = nil) {
+                interaction: StaveInteraction? = nil,
+                decorations: ((LayoutDocument) -> AnyView)? = nil) {
         self.score = score
         self.part = part
         self.options = options
         self.overlay = overlay
         self.onLayout = onLayout
         self.interaction = interaction
+        self.decorations = decorations
     }
 
     private static func currentModifiers() -> KeyEvent.Modifiers {
@@ -99,31 +103,35 @@ public struct StaveView: View {
                 ZStack(alignment: .topLeading) {
                     StaveCanvas(layout: layout, theme: theme)
                     OverlayCanvas(layout: layout, theme: theme, overlay: overlay)
+                    Color.clear.contentShape(Rectangle())
+                        .frame(width: width, height: layout.height)
+                        .gesture(staveGesture)
+                    if let decorations { decorations(layout) }
                 }
                 .frame(width: width, height: layout.height)
-                .contentShape(Rectangle())
-                .gesture(
-                    DragGesture(minimumDistance: 0, coordinateSpace: .local)
-                        .onChanged { value in
-                            guard let interaction else { return }
-                            let moved = hypot(value.translation.width, value.translation.height)
-                            if !dragging {
-                                if moved > 3 { dragging = true; interaction.onDragBegan(value.startLocation); interaction.onDragChanged(value.location) }
-                            } else {
-                                interaction.onDragChanged(value.location)
-                            }
-                        }
-                        .onEnded { value in
-                            guard let interaction else { return }
-                            if dragging { interaction.onDragEnded(); dragging = false }
-                            else { interaction.onClick(value.location, StaveView.currentModifiers()) }
-                        }
-                )
                 .onAppear { onLayout?(layout) }
                 .onChange(of: layout) { _, new in onLayout?(new) }
             }
             .background(theme.background)
         }
+    }
+
+    private var staveGesture: some Gesture {
+        DragGesture(minimumDistance: 0, coordinateSpace: .local)
+            .onChanged { value in
+                guard let interaction else { return }
+                let moved = hypot(value.translation.width, value.translation.height)
+                if !dragging {
+                    if moved > 3 { dragging = true; interaction.onDragBegan(value.startLocation); interaction.onDragChanged(value.location) }
+                } else {
+                    interaction.onDragChanged(value.location)
+                }
+            }
+            .onEnded { value in
+                guard let interaction else { return }
+                if dragging { interaction.onDragEnded(); dragging = false }
+                else { interaction.onClick(value.location, StaveView.currentModifiers()) }
+            }
     }
 }
 

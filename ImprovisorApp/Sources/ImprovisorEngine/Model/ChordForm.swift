@@ -223,6 +223,9 @@ public final class Vocabulary: Sendable {
         return forms[current]
     }
 
+    /// Every C-rooted chord name known: spelled forms plus aliases.
+    public var allChordFormNames: [String] { Array(forms.keys) + Array(aliases.keys) }
+
     /// Number of spelled chord forms loaded (for diagnostics/tests).
     public var formCount: Int { forms.count }
     /// Number of alias entries loaded (for diagnostics/tests).

@@ -28,6 +28,16 @@ public final class EditorController: ObservableObject {
     @Published public var lastPitch = 60
     @Published public var loopEnabled = false
     @Published public var status = ""
+    /// Measure whose chord cell is being edited (nil = none); set by ⌘⇧K or a click.
+    @Published public var editingChordMeasure: Int?
+    /// Incremented to ask the view to give keyboard focus back to the stave.
+    @Published public var staveFocusRequest = 0
+
+    /// MIDI keyboard input: note-ons enter notes at the cursor (step entry).
+    public let midiInput = MIDIInputSource()
+    @Published public var midiEnabled = false {
+        didSet { midiEnabled ? midiInput.start() : midiInput.stop() }
+    }
 
     /// Sound entered notes.
     public var auditions = true
@@ -38,6 +48,12 @@ public final class EditorController: ObservableObject {
         self.document = document
         self.playback = playback
         if let first = document.score.melodyParts.first?.notes.first { lastPitch = first.pitch }
+        midiInput.onNoteOn = { [weak self] pitch, _ in
+            Task { @MainActor [weak self] in
+                guard let self, self.editingChordMeasure == nil else { return }
+                self.enter(pitch: Int(pitch), snap: false)
+            }
+        }
     }
 
     // MARK: Derived
@@ -405,7 +421,9 @@ public final class EditorController: ObservableObject {
         case let .paste(scope): paste(scope)
         case .selectAll: selectAll()
         case .escape: selection = nil; playback?.stop()
-        case .focusChords, .generateSolo: break // handled by the view / Phase 8
+        case .focusChords:
+            editingChordMeasure = cursorSlot / max(1, meter.slotsPerMeasure)
+        case .generateSolo: break // Phase 8
         }
     }
 
@@ -419,43 +437,4 @@ public final class EditorController: ObservableObject {
 
 extension Note {
     func withPitch(_ p: Int) -> Note { Note(pitch: max(0, min(127, p)), duration: duration, volume: volume, spelling: spelling) }
-}
-
-public extension ChordPart {
-    /// This progression with `range` replaced by `new` (re-based at the range
-    /// start, trimmed/padded to the range; empty `new` = hold the previous chord).
-    func replacing(range: Range<Int>, with new: ChordPart) -> ChordPart {
-        guard !range.isEmpty, size > 0 else { return self }
-        var out = ChordPart(info: info)
-        let clipped = range.lowerBound..<min(range.upperBound, size)
-        // Before.
-        for e in slice(0..<clipped.lowerBound).entries { out.append(e.symbol, duration: e.duration) }
-        // Replacement.
-        var filled = 0
-        for e in new.entries where filled < clipped.count {
-            let d = min(e.duration, clipped.count - filled)
-            out.append(e.symbol, duration: d)
-            filled += d
-        }
-        if filled < clipped.count {
-            let hold = out.entries.last?.symbol ?? .noChord
-            out.append(hold, duration: clipped.count - filled)
-        }
-        // After.
-        for e in slice(clipped.upperBound..<size).entries { out.append(e.symbol, duration: e.duration) }
-        return out.mergingRepeats()
-    }
-
-    /// Adjacent identical chords merged into one entry.
-    func mergingRepeats() -> ChordPart {
-        var out = ChordPart(info: info)
-        for e in entries {
-            if let last = out.entries.last, last.symbol == e.symbol {
-                out.extendLast(by: e.duration)
-            } else {
-                out.append(e.symbol, duration: e.duration)
-            }
-        }
-        return out
-    }
 }
