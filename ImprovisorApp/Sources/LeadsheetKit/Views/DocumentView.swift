@@ -16,6 +16,8 @@ public struct DocumentView: View {
     @StateObject private var editor: EditorController
     @Environment(\.undoManager) private var undoManager
     @AppStorage("showInspector") private var showInspector = true
+    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
+    @Environment(\.openWindow) private var openWindow
 
     public init(document: LeadsheetDocument, library: DataLibrary = .shared) {
         self.document = document
@@ -53,6 +55,7 @@ public struct DocumentView: View {
         .onAppear {
             editor.playback = playback
             if document.score.tempo > 0 { playback.tempo = min(300, max(30, document.score.tempo)) }
+            if !hasSeenOnboarding { openWindow(id: "welcome") }
         }
         .onDisappear { playback.shutdown() }
         .focusedSceneValue(\.playbackController, playback)

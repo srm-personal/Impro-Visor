@@ -22,6 +22,13 @@ struct LeadsheetStudioApp: App {
         Window("Library", id: "library") {
             LibraryBrowser()
         }
-        .keyboardShortcut("o", modifiers: [.command, .shift])
+        Window("About Leadsheet Studio", id: "about") {
+            AboutView()
+        }
+        .windowResizability(.contentSize)
+        Window("Welcome", id: "welcome") {
+            OnboardingView()
+        }
+        .windowResizability(.contentSize)
     }
 }
