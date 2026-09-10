@@ -106,17 +106,31 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.srmorin.LeadsheetStudioTests
         GENERATE_INFOPLIST_FILE: YES
 
+  LeadsheetStudioUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    sources:
+      - path: LeadsheetStudioUITests
+    dependencies:
+      - target: LeadsheetStudio
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.srmorin.LeadsheetStudioUITests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: LeadsheetStudio
+
 schemes:
   LeadsheetStudio:
     build:
       targets:
         LeadsheetStudio: all
         LeadsheetStudioTests: [test]
+        LeadsheetStudioUITests: [test]
     run:
       config: Debug
     test:
       config: Debug
-      targets: [LeadsheetStudioTests]
+      targets: [LeadsheetStudioTests, LeadsheetStudioUITests]
     profile:
       config: Release
     analyze:

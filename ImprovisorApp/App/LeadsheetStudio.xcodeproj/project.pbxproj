@@ -10,6 +10,7 @@
 		05E7A6FA50BC5B3BCFDDB316 /* grammars in Resources */ = {isa = PBXBuildFile; fileRef = CF1D32C2BC74055F35802FD6 /* grammars */; };
 		30F91A306B2C12FBA8C14D04 /* LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 73BFA6F982A5475E089D097F /* LICENSE.txt */; };
 		42EEBE5B92E278A3AA586888 /* leadsheets in Resources */ = {isa = PBXBuildFile; fileRef = 7D8EE8E2315A87000CE0062C /* leadsheets */; };
+		4F9863B905668E68BD374142 /* SmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60FA534D56C309D665D82DD3 /* SmokeTests.swift */; };
 		77A84959B7032C47846992E8 /* styles in Resources */ = {isa = PBXBuildFile; fileRef = 4791C5499B7F21636C7A5CD5 /* styles */; };
 		805231FF5936607F1DDABF55 /* voicings in Resources */ = {isa = PBXBuildFile; fileRef = 762C029F22BBAB712924CDC7 /* voicings */; };
 		BA1CCFDECBA2CFB53251B494 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1CE26E28395895DE6440F2D3 /* Assets.xcassets */; };
@@ -27,6 +28,13 @@
 			remoteGlobalIDString = 8DC33205401553E7F8EFE952;
 			remoteInfo = LeadsheetStudio;
 		};
+		8E8935EFA56CC9337D786B0D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4A1A7E3FEC447FECD62CB5D7 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 8DC33205401553E7F8EFE952;
+			remoteInfo = LeadsheetStudio;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
@@ -34,6 +42,8 @@
 		1CE26E28395895DE6440F2D3 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		4791C5499B7F21636C7A5CD5 /* styles */ = {isa = PBXFileReference; lastKnownFileType = folder; name = styles; path = ../../styles; sourceTree = SOURCE_ROOT; };
 		4D3E317A3D2C90F814343316 /* LeadsheetStudio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LeadsheetStudio.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		60FA534D56C309D665D82DD3 /* SmokeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmokeTests.swift; sourceTree = "<group>"; };
+		639CF2D156C33E9FA0607C05 /* LeadsheetStudioUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LeadsheetStudioUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		73BFA6F982A5475E089D097F /* LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = LICENSE.txt; path = ../../LICENSE.txt; sourceTree = "<group>"; };
 		762C029F22BBAB712924CDC7 /* voicings */ = {isa = PBXFileReference; lastKnownFileType = folder; name = voicings; path = ../../voicings; sourceTree = SOURCE_ROOT; };
 		7D8EE8E2315A87000CE0062C /* leadsheets */ = {isa = PBXFileReference; lastKnownFileType = folder; name = leadsheets; path = ../../leadsheets; sourceTree = SOURCE_ROOT; };
@@ -56,6 +66,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		4006EBF5685B6FC4E89759C2 /* LeadsheetStudioUITests */ = {
+			isa = PBXGroup;
+			children = (
+				60FA534D56C309D665D82DD3 /* SmokeTests.swift */,
+			);
+			path = LeadsheetStudioUITests;
+			sourceTree = "<group>";
+		};
 		4A69CA02C24D7E53BDBB7BCE /* LeadsheetStudio */ = {
 			isa = PBXGroup;
 			children = (
@@ -71,6 +89,7 @@
 				E7126D7D13F75051887F8645 /* Corpus */,
 				4A69CA02C24D7E53BDBB7BCE /* LeadsheetStudio */,
 				EABD47E57B7A28B3E6428E84 /* LeadsheetStudioTests */,
+				4006EBF5685B6FC4E89759C2 /* LeadsheetStudioUITests */,
 				E4A21E9EEEFF9E576157495B /* Packages */,
 				B5DA9C4A0C64EED95BF09077 /* Products */,
 			);
@@ -81,6 +100,7 @@
 			children = (
 				4D3E317A3D2C90F814343316 /* LeadsheetStudio.app */,
 				FF457ED17465C9C454F67B0D /* LeadsheetStudioTests.xctest */,
+				639CF2D156C33E9FA0607C05 /* LeadsheetStudioUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -155,6 +175,24 @@
 			productReference = 4D3E317A3D2C90F814343316 /* LeadsheetStudio.app */;
 			productType = "com.apple.product-type.application";
 		};
+		E334ED681F456BB31DE76F7C /* LeadsheetStudioUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8857FB552771B62546E30321 /* Build configuration list for PBXNativeTarget "LeadsheetStudioUITests" */;
+			buildPhases = (
+				2238B7632922EE9C9B183913 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				2F5EF4108FA8DC5D6CA2538E /* PBXTargetDependency */,
+			);
+			name = LeadsheetStudioUITests;
+			packageProductDependencies = (
+			);
+			productName = LeadsheetStudioUITests;
+			productReference = 639CF2D156C33E9FA0607C05 /* LeadsheetStudioUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -171,6 +209,11 @@
 					8DC33205401553E7F8EFE952 = {
 						DevelopmentTeam = 65KL68N9K8;
 						ProvisioningStyle = Automatic;
+					};
+					E334ED681F456BB31DE76F7C = {
+						DevelopmentTeam = 65KL68N9K8;
+						ProvisioningStyle = Automatic;
+						TestTargetID = 8DC33205401553E7F8EFE952;
 					};
 				};
 			};
@@ -193,6 +236,7 @@
 			targets = (
 				8DC33205401553E7F8EFE952 /* LeadsheetStudio */,
 				597D502E2F185CF6FE55A6F6 /* LeadsheetStudioTests */,
+				E334ED681F456BB31DE76F7C /* LeadsheetStudioUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -215,6 +259,14 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		2238B7632922EE9C9B183913 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4F9863B905668E68BD374142 /* SmokeTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		4B253D6D9460A8E8C4C8809A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -234,6 +286,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		2F5EF4108FA8DC5D6CA2538E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 8DC33205401553E7F8EFE952 /* LeadsheetStudio */;
+			targetProxy = 8E8935EFA56CC9337D786B0D /* PBXContainerItemProxy */;
+		};
 		83302778B2C22989A1D65488 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 8DC33205401553E7F8EFE952 /* LeadsheetStudio */;
@@ -386,6 +443,23 @@
 			};
 			name = Release;
 		};
+		9648A66CEEDA3B2929397E3A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.srmorin.LeadsheetStudioUITests;
+				SDKROOT = macosx;
+				TEST_TARGET_NAME = LeadsheetStudio;
+			};
+			name = Release;
+		};
 		D67494630925A2C027039D78 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -449,6 +523,23 @@
 			};
 			name = Release;
 		};
+		FFBD9E49003153BF59BD7FA5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.srmorin.LeadsheetStudioUITests;
+				SDKROOT = macosx;
+				TEST_TARGET_NAME = LeadsheetStudio;
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -475,6 +566,15 @@
 			buildConfigurations = (
 				19D72CFBC70E1B40CE7CB769 /* Debug */,
 				D67494630925A2C027039D78 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		8857FB552771B62546E30321 /* Build configuration list for PBXNativeTarget "LeadsheetStudioUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FFBD9E49003153BF59BD7FA5 /* Debug */,
+				9648A66CEEDA3B2929397E3A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

@@ -35,6 +35,20 @@
                ReferencedContainer = "container:LeadsheetStudio.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "E334ED681F456BB31DE76F7C"
+               BuildableName = "LeadsheetStudioUITests.xctest"
+               BlueprintName = "LeadsheetStudioUITests"
+               ReferencedContainer = "container:LeadsheetStudio.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -61,6 +75,17 @@
                BlueprintIdentifier = "597D502E2F185CF6FE55A6F6"
                BuildableName = "LeadsheetStudioTests.xctest"
                BlueprintName = "LeadsheetStudioTests"
+               ReferencedContainer = "container:LeadsheetStudio.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "E334ED681F456BB31DE76F7C"
+               BuildableName = "LeadsheetStudioUITests.xctest"
+               BlueprintName = "LeadsheetStudioUITests"
                ReferencedContainer = "container:LeadsheetStudio.xcodeproj">
             </BuildableReference>
          </TestableReference>
