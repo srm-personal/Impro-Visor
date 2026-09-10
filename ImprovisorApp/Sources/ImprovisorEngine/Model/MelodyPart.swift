@@ -10,11 +10,14 @@
 
 import Foundation
 
-public struct MelodyPart: Equatable {
+public struct MelodyPart: Equatable, Sendable {
     public private(set) var events: [MusicEvent]
+    /// Leadsheet `(part …)` header metadata for this part.
+    public var info: PartInfo
 
-    public init(events: [MusicEvent] = []) {
+    public init(events: [MusicEvent] = [], info: PartInfo = .defaultMelody) {
         self.events = events
+        self.info = info
     }
 
     /// Total length in slots.
@@ -40,6 +43,6 @@ public struct MelodyPart: Equatable {
             case let .note(n): return .note(n.transposed(by: semitones))
             case .rest: return event
             }
-        })
+        }, info: info)
     }
 }

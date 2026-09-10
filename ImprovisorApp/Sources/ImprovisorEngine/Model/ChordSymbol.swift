@@ -10,7 +10,7 @@
 
 import Foundation
 
-public struct ChordSymbol: Equatable {
+public struct ChordSymbol: Equatable, Sendable {
     /// The literal chord name as written in the leadsheet, e.g. `Dm7`, `C/E`.
     public let name: String
     /// The root pitch class.

@@ -10,7 +10,7 @@
 import Foundation
 
 /// A chord sounding for a given number of slots.
-public struct Chord: Equatable {
+public struct Chord: Equatable, Sendable {
     public var symbol: ChordSymbol
     public var duration: Int
 
@@ -21,9 +21,9 @@ public struct Chord: Equatable {
 }
 
 /// An ordered, slot-positioned sequence of chords.
-public struct ChordPart: Equatable {
+public struct ChordPart: Equatable, Sendable {
     /// One chord placed at an absolute start slot.
-    public struct Entry: Equatable {
+    public struct Entry: Equatable, Sendable {
         public var symbol: ChordSymbol
         public var start: Int
         public var duration: Int
@@ -33,10 +33,20 @@ public struct ChordPart: Equatable {
     public private(set) var entries: [Entry]
     /// Total length in slots.
     public private(set) var size: Int
+    /// Leadsheet `(part …)` header metadata for this part.
+    public var info: PartInfo
 
-    public init(entries: [Entry] = [], size: Int = 0) {
+    public init(entries: [Entry] = [], size: Int = 0, info: PartInfo = .defaultChords) {
         self.entries = entries
         self.size = max(size, entries.last.map(\.end) ?? 0)
+        self.info = info
+    }
+
+    /// Lengthen the last chord by `slots` (used to flesh out a partial final bar).
+    public mutating func extendLast(by slots: Int) {
+        guard slots > 0, let last = entries.indices.last else { return }
+        entries[last].duration += slots
+        size = entries[last].end
     }
 
     /// Append a chord that starts immediately after the current content.

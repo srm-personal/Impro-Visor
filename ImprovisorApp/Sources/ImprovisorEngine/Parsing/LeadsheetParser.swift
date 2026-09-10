@@ -3,20 +3,24 @@
 //  ImprovisorEngine
 //
 //  Parses a `.ls` lead sheet into a `Score`. Ports the reading logic of
-//  imp/data/Leadsheet. A leadsheet is a stream of S-expression metadata forms
-//  followed by bare tokens:
+//  imp/data/Leadsheet.readLeadSheet + addToChordPart. A leadsheet is a stream
+//  of S-expression directives followed by bare tokens:
 //
-//    (title So What?) (meter 4 4) (key 0) (tempo 160.0) (style swing)
-//    (part (type chords) …)
-//    Dm7 | / | Dm7 | / |            <- chord shorthand (not S-expressions)
-//    (part (type melody) …)
-//    r8 a-8 r1+1+…                  <- melody note tokens
+//    (title So What?) (meter 4 4) (key 0) (tempo 160.0) (style swing …)
+//    (part (type chords) (title …) (instrument 0) …)
+//    (section (style swing))          <- section/phrase markers sit in the
+//    Dm7 | / | Dm7 | / |                 chord stream and mark a measure
+//    (part (type melody) (stave treble) …)
+//    r8 a-8 r1+1+…                    <- melody note tokens
 //
-//  Chord shorthand rules (from Leadsheet.addToChordPart):
-//    * `|` and `,` are bar delimiters.
-//    * Within a bar, the bar's slots are split evenly across its tokens; each
-//      token is either a chord symbol or `/` (repeat/hold the previous chord).
-//    * An empty bar holds the previous chord for a full measure.
+//  Token classification follows Java: bars (`|`, `,`) and `/` and names that
+//  start with an upper-case letter are chords; lower-case names are melody
+//  notes for the current melody part.
+//
+//  Chord shorthand (addToChordPart): within a bar the bar's slots are split
+//  evenly across its chord/slash tokens; `/` holds the previous chord; an empty
+//  bar holds the previous chord for a full measure. A leading bar means "no
+//  pickup" and is dropped. The final chord is fleshed out to the bar line.
 //
 
 import Foundation
@@ -26,54 +30,126 @@ public enum LeadsheetParser {
     /// Parse leadsheet text into a `Score`, resolving chords with `vocabulary`.
     public static func parse(_ content: String, vocabulary: Vocabulary) -> Score {
         var score = Score()
+        var chordStream: [ChordToken] = []
+        var melodyBuckets: [MelodyBucket] = []
+        var chordInfo = PartInfo.defaultChords
+        var seenStyle = false
+        var rise = 0
 
-        // Collected token streams (filled while walking the flat form list).
-        var chordTokens: [String] = []
-        var melodyTokens: [[String]] = [[]] // one bucket per melody part
-        var sectionMarks: [(measure: Int, style: String)] = []
-
-        var mode: StreamMode = .none
+        func currentBucket() -> Int {
+            if melodyBuckets.isEmpty { melodyBuckets.append(MelodyBucket(info: .defaultMelody)) }
+            return melodyBuckets.count - 1
+        }
 
         for form in PolyaParser.parseAll(content) {
             switch form {
             case let .list(list):
-                dispatch(list, into: &score, mode: &mode,
-                         chordTokens: chordTokens, sectionMarks: &sectionMarks,
-                         melodyTokens: &melodyTokens)
-            default:
-                // A bare token belongs to the current stream.
-                let token = form.description
-                switch mode {
-                case .chords: chordTokens.append(token)
-                case .melody: melodyTokens[melodyTokens.count - 1].append(token)
-                case .none: break
+                guard case let .symbol(head) = list.firstOrNil() else { continue }
+                let rest = list.rest()
+                switch head {
+                case "title": score.title = concatElements(rest)
+                case "composer": score.composer = concatElements(rest)
+                case "show": score.showTitle = concatElements(rest)
+                case "year": score.year = concatElements(rest)
+                case "comments": score.comments = concatElements(rest)
+                case "meter":
+                    if let n = rest.firstOrNil()?.intValue {
+                        let d = rest.secondOrNil()?.intValue ?? 4
+                        score.meter = Meter(n, d > 0 ? d : 4)
+                    }
+                case "key":
+                    if let k = rest.firstOrNil()?.intValue { score.key = Key(index: k) }
+                case "tempo":
+                    if let t = rest.firstOrNil()?.doubleValue { score.tempo = t }
+                case "volume":
+                    if let v = rest.firstOrNil()?.intValue { score.volume = v }
+                case "playback-transpose":
+                    let values = rest.toArray().compactMap(\.intValue)
+                    if values.count >= 3 {
+                        score.playbackTranspose = Transposition(bass: values[0], chords: values[1], melody: values[2])
+                    } else if values.count == 1 {
+                        score.playbackTranspose = Transposition(bass: values[0], chords: values[0], melody: 0)
+                    }
+                case "chord-font-size": if let v = rest.firstOrNil()?.intValue { score.chordFontSize = v }
+                case "bass-instrument": if let v = rest.firstOrNil()?.intValue { score.bassInstrument = v }
+                case "bass-volume": if let v = rest.firstOrNil()?.intValue { score.bassVolume = v }
+                case "drum-volume": if let v = rest.firstOrNil()?.intValue { score.drumVolume = v }
+                case "chord-volume": if let v = rest.firstOrNil()?.intValue { score.chordVolume = v }
+                case "melody-volume": if let v = rest.firstOrNil()?.intValue { score.melodyVolume = v }
+                case "breakpoint": if let v = rest.firstOrNil()?.intValue { score.breakpoint = v }
+                case "roadmap-layout": if let v = rest.firstOrNil()?.intValue { score.roadmapLayout = v }
+                case "layout": score.layout = rest.toArray().compactMap(\.intValue)
+                case "transpose":
+                    if let r = rest.firstOrNil()?.intValue { rise = r }
+                case "bars":
+                    break // ignored by Java as well
+                case "style":
+                    // (style name (param …)*) — the header style. Java also
+                    // treats it as a section marker at the current measure.
+                    if let name = rest.firstOrNil()?.symbolValue {
+                        if !seenStyle {
+                            seenStyle = true
+                            score.styleName = name
+                            let params = rest.rest()
+                            score.styleOverride = params.nonEmpty ? params : nil
+                        }
+                        chordStream.append(.marker(SectionMarker(styleName: name, isPhrase: false)))
+                    }
+                case "section", "phrase":
+                    let style = rest.assoc("style")?.secondOrNil()?.symbolValue ?? ""
+                    chordStream.append(.marker(SectionMarker(styleName: style, isPhrase: head == "phrase")))
+                case "part":
+                    let (type, info) = parsePart(rest)
+                    switch type {
+                    case "chords":
+                        chordInfo = info
+                    case "melody":
+                        var melodyInfo = info
+                        if rest.assoc("stave") == nil { melodyInfo.stave = .treble }
+                        melodyBuckets.append(MelodyBucket(info: melodyInfo))
+                    default:
+                        break
+                    }
+                default:
+                    score.unknownForms.append(list)
                 }
+
+            case let .symbol(token):
+                guard let first = token.first else { continue }
+                if first == "|" || first == "," {
+                    chordStream.append(.bar)
+                } else if first == "/" {
+                    chordStream.append(.slash)
+                } else if first.isLetter {
+                    if first.isLowercase {
+                        melodyBuckets[currentBucket()].tokens.append(token)
+                    } else {
+                        chordStream.append(.chord(token))
+                    }
+                }
+
+            default:
+                break // stray numbers are ignored
             }
         }
 
-        // Build the chord part now that the meter is known.
-        score.chordPart = buildChordPart(
-            tokens: chordTokens,
-            slotsPerBar: score.meter.slotsPerMeasure,
-            vocabulary: vocabulary
-        )
-
-        // Build melody parts.
-        score.melodyParts = melodyTokens
-            .filter { !$0.isEmpty }
-            .map { MelodyPart(events: NoteSymbol.parseMelody($0.joined(separator: " "))) }
-
-        // Sections.
-        var info = SectionInfo()
-        if sectionMarks.isEmpty {
-            info.add(SectionRecord(measure: 0, styleName: score.styleName))
-        } else {
-            for mark in sectionMarks {
-                info.add(SectionRecord(measure: mark.measure, styleName: mark.style))
-            }
+        // Chords + sections.
+        var sections = SectionInfo()
+        score.chordPart = buildChordPart(stream: chordStream,
+                                         slotsPerBar: score.meter.slotsPerMeasure,
+                                         vocabulary: vocabulary,
+                                         sections: &sections)
+        score.chordPart.info = chordInfo
+        if sections.record(atMeasure: 0) == nil || sections.records.first?.measure != 0 {
+            sections.add(SectionRecord(measure: 0, styleName: score.styleName, isPhrase: false))
         }
-        score.sections = info
+        score.sections = sections
 
+        // Melody parts: one per (part (type melody)) header (plus an implicit
+        // first part if notes appeared before any header).
+        score.melodyParts = melodyBuckets.map { bucket in
+            MelodyPart(events: parseMelodyTokens(bucket.tokens, rise: rise), info: bucket.info)
+        }
         return score
     }
 
@@ -82,126 +158,150 @@ public enum LeadsheetParser {
         try parse(String(contentsOf: url, encoding: .utf8), vocabulary: vocabulary)
     }
 
-    // MARK: Metadata / part dispatch
+    // MARK: Pieces
 
-    private static func dispatch(
-        _ list: Polylist,
-        into score: inout Score,
-        mode: inout StreamMode,
-        chordTokens: [String],
-        sectionMarks: inout [(measure: Int, style: String)],
-        melodyTokens: inout [[String]]
-    ) {
-        guard case let .symbol(head) = list.firstOrNil() else { return }
-        let rest = list.rest()
-
-        switch head {
-        case "title": score.title = joinedText(rest)
-        case "composer": score.composer = joinedText(rest)
-        case "comments": score.comments = joinedText(rest)
-        case "meter":
-            if let n = rest.firstOrNil()?.intValue, let d = rest.secondOrNil()?.intValue {
-                score.meter = Meter(n, d)
-            }
-        case "key":
-            if let k = rest.firstOrNil()?.intValue { score.key = Key(index: k) }
-        case "tempo":
-            if let t = rest.firstOrNil()?.doubleValue { score.tempo = t }
-        case "volume":
-            if let v = rest.firstOrNil()?.intValue { score.volume = v }
-        case "style":
-            if let s = rest.firstOrNil()?.symbolValue { score.styleName = s }
-        case "section":
-            // (section (style X)) — record where the style changes.
-            let style = rest.assoc("style")?.secondOrNil()?.symbolValue ?? ""
-            let measure = barCount(chordTokens)
-            sectionMarks.append((measure: measure, style: style))
-        case "part":
-            switch rest.assoc("type")?.secondOrNil()?.symbolValue {
-            case "chords": mode = .chords
-            case "melody":
-                mode = .melody
-                melodyTokens.append([])
-            default: mode = .none
-            }
-        default:
-            break
-        }
+    enum ChordToken: Equatable {
+        case bar
+        case slash
+        case chord(String)
+        case marker(SectionMarker)
     }
 
-    private enum StreamMode { case none, chords, melody }
+    struct SectionMarker: Equatable {
+        var styleName: String
+        var isPhrase: Bool
+    }
 
-    // MARK: Chord shorthand -> ChordPart
+    private struct MelodyBucket {
+        var info: PartInfo
+        var tokens: [String] = []
+    }
 
-    static func buildChordPart(tokens rawTokens: [String], slotsPerBar: Int,
-                               vocabulary: Vocabulary) -> ChordPart {
+    /// `(part (type X) (title …) (composer …) (instrument n) (volume n) (key k) (stave s))`
+    private static func parsePart(_ items: Polylist) -> (type: String, info: PartInfo) {
+        var info = PartInfo()
+        var type = ""
+        for item in items {
+            guard case let .list(sub) = item, case let .symbol(key) = sub.firstOrNil() else { continue }
+            let value = sub.rest()
+            switch key {
+            case "type": type = value.firstOrNil()?.symbolValue ?? ""
+            case "title": info.title = concatElements(value)
+            case "composer": info.composer = concatElements(value)
+            case "instrument": if let v = value.firstOrNil()?.intValue { info.instrument = v }
+            case "volume": if let v = value.firstOrNil()?.intValue { info.volume = v }
+            case "key": if let v = value.firstOrNil()?.intValue { info.key = v }
+            case "stave":
+                if let s = value.firstOrNil()?.symbolValue, let stave = StaveType(rawValue: s) {
+                    info.stave = stave
+                }
+            default: break
+            }
+        }
+        if type == "chords" && items.assoc("instrument") == nil { info.instrument = PartInfo.defaultChords.instrument }
+        if type == "chords" && items.assoc("volume") == nil { info.volume = PartInfo.defaultChords.volume }
+        if type == "melody" && items.assoc("instrument") == nil { info.instrument = PartInfo.defaultMelody.instrument }
+        if type == "melody" && items.assoc("volume") == nil { info.volume = PartInfo.defaultMelody.volume }
+        return (type, info)
+    }
+
+    /// Melody tokens → events. Handles `vNN` volume tokens (Java VolumeSymbol)
+    /// and skips anything unparseable, as the Java reader does.
+    static func parseMelodyTokens(_ tokens: [String], rise: Int) -> [MusicEvent] {
+        var events: [MusicEvent] = []
+        var volume = 127
+        for token in tokens {
+            if token.hasPrefix("v"), let v = Int(token.dropFirst()) {
+                volume = max(0, min(127, v))
+                continue
+            }
+            guard var event = NoteSymbol.parse(token, transposition: rise) else { continue }
+            if case var .note(n) = event {
+                n.volume = volume
+                event = .note(n)
+            }
+            events.append(event)
+        }
+        return events
+    }
+
+    // MARK: Chord shorthand -> ChordPart (Java addToChordPart)
+
+    static func buildChordPart(stream: [ChordToken], slotsPerBar: Int,
+                               vocabulary: Vocabulary,
+                               sections: inout SectionInfo) -> ChordPart {
         var part = ChordPart()
         guard slotsPerBar > 0 else { return part }
 
-        // Trim leading/trailing bar delimiters (formatting, not empty measures).
-        var tokens = rawTokens
-        while let f = tokens.first, isBar(f) { tokens.removeFirst() }
-        while let l = tokens.last, isBar(l) { tokens.removeLast() }
-
-        // Split into bars.
-        var bars: [[String]] = []
-        var current: [String] = []
-        for token in tokens {
-            if isBar(token) {
-                bars.append(current)
-                current = []
-            } else {
-                current.append(token)
-            }
-        }
-        bars.append(current)
+        var tokens = stream[...]
+        if tokens.first == .bar { tokens = tokens.dropFirst() } // no pickup
 
         var previous: ChordSymbol?
         var accumulated = 0
+        var measure = 0
 
-        for bar in bars {
-            let n = bar.count
-            if n == 0 {
-                accumulated += slotsPerBar // empty bar holds previous chord
-                continue
+        while !tokens.isEmpty {
+            // Collect one bar.
+            var bar: [ChordToken] = []
+            while let t = tokens.first, t != .bar {
+                bar.append(t)
+                tokens = tokens.dropFirst()
             }
-            guard slotsPerBar % n == 0 else {
-                // Non-conforming bar: fall back to whole-bar spacing.
-                accumulated += slotsPerBar
-                continue
-            }
-            let spacing = slotsPerBar / n
+            if tokens.first == .bar { tokens = tokens.dropFirst() }
+
+            let cells = bar.filter { if case .marker = $0 { return false } else { return true } }.count
+            let spacing = cells > 0 ? slotsPerBar / cells : slotsPerBar
+            let remainder = cells > 0 ? slotsPerBar - spacing * cells : 0
+            if cells == 0 { accumulated += slotsPerBar }
+
+            var cellIndex = 0
+            var seenFirstChord = false
             for token in bar {
-                if token == "/" {
-                    accumulated += spacing
-                } else {
-                    if let previous {
-                        part.append(previous, duration: accumulated)
+                switch token {
+                case let .marker(marker):
+                    let index = measure + (seenFirstChord ? 1 : 0)
+                    sections.add(SectionRecord(measure: index, styleName: marker.styleName,
+                                               isPhrase: marker.isPhrase))
+                case .slash, .chord:
+                    seenFirstChord = true
+                    let width = spacing + (cellIndex == cells - 1 ? remainder : 0)
+                    cellIndex += 1
+                    if case let .chord(name) = token {
+                        if let previous { part.append(previous, duration: accumulated) }
+                        // Unrecognized chord names fall back to NC (as Java does).
+                        previous = ChordSymbol.parse(name, vocabulary: vocabulary)
+                            ?? ChordSymbol.parse(ChordSymbol.noChordName, vocabulary: vocabulary)!
+                        accumulated = width
+                    } else {
+                        accumulated += width
                     }
-                    // Unrecognized chord names fall back to NC (as Java does).
-                    previous = ChordSymbol.parse(token, vocabulary: vocabulary)
-                        ?? ChordSymbol.parse(ChordSymbol.noChordName, vocabulary: vocabulary)!
-                    accumulated = spacing
+                case .bar:
+                    break
                 }
             }
+            measure += 1
         }
 
-        if let previous {
-            part.append(previous, duration: accumulated)
-        }
+        if let previous { part.append(previous, duration: accumulated) }
+        // Flesh out a partial final bar (Java's Part does this on insertion).
+        let tail = part.size % slotsPerBar
+        if tail != 0 { part.extendLast(by: slotsPerBar - tail) }
         return part
     }
 
     // MARK: Helpers
 
-    private static func isBar(_ token: String) -> Bool { token == "|" || token == "," }
-
-    /// Number of complete bars represented by the tokens so far.
-    private static func barCount(_ tokens: [String]) -> Int {
-        tokens.filter { isBar($0) }.count
-    }
-
-    private static func joinedText(_ list: Polylist) -> String {
-        list.map(\.description).joined(separator: " ")
+    /// Java `Leadsheet.concatElements`: elements joined by single spaces, except
+    /// that no space precedes a comma token.
+    static func concatElements(_ list: Polylist) -> String {
+        var out = ""
+        var first = true
+        for item in list {
+            let text = item.description
+            if !first && text != "," { out += " " }
+            out += text
+            first = false
+        }
+        return out
     }
 }

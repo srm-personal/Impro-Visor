@@ -9,26 +9,37 @@
 
 import Foundation
 
+/// How a note's pitch class was spelled in the leadsheet (Java `Accidental`).
+/// Governs the letter name used when the note is written back or displayed:
+/// MIDI 61 is `c#` when `.sharp` and `db` when `.flat`.
+public enum Accidental: String, Equatable, Hashable, Sendable {
+    case natural, sharp, flat
+}
+
 /// A sounding note: a MIDI pitch with a slot duration and a MIDI velocity.
-public struct Note: Equatable, Hashable {
+public struct Note: Equatable, Hashable, Sendable {
     /// MIDI note number, 0–127.
     public var pitch: Int
     /// Duration in slots.
     public var duration: Int
     /// MIDI velocity, 0–127.
     public var volume: Int
+    /// Enharmonic spelling preference for this note.
+    public var spelling: Accidental
 
     public static let defaultVolume = 85
 
-    public init(pitch: Int, duration: Int, volume: Int = Note.defaultVolume) {
+    public init(pitch: Int, duration: Int, volume: Int = Note.defaultVolume,
+                spelling: Accidental = .natural) {
         self.pitch = pitch
         self.duration = duration
         self.volume = volume
+        self.spelling = spelling
     }
 
-    /// This note transposed by a number of semitones.
+    /// This note transposed by a number of semitones (spelling preference kept).
     public func transposed(by semitones: Int) -> Note {
-        Note(pitch: pitch + semitones, duration: duration, volume: volume)
+        Note(pitch: pitch + semitones, duration: duration, volume: volume, spelling: spelling)
     }
 
     /// The note's pitch class.
@@ -36,13 +47,13 @@ public struct Note: Equatable, Hashable {
 }
 
 /// A silence of a given slot duration.
-public struct Rest: Equatable, Hashable {
+public struct Rest: Equatable, Hashable, Sendable {
     public var duration: Int
     public init(duration: Int) { self.duration = duration }
 }
 
 /// One element of a melody: either a note or a rest (the `Unit` role in Java).
-public enum MusicEvent: Equatable, Hashable {
+public enum MusicEvent: Equatable, Hashable, Sendable {
     case note(Note)
     case rest(Rest)
 
@@ -88,11 +99,13 @@ public enum NoteSymbol {
         // Note base: letter + optional accidental (#, b, or 's' == sharp).
         var noteBase = String(chars[0])
         var index = 1
+        var spelling = Accidental.natural
         if index < len {
             let second = chars[1]
             if second == "#" || second == "b" || second == "s" {
                 index += 1
                 noteBase.append(second == "s" ? "#" : second)
+                spelling = second == "b" ? .flat : .sharp
             }
         }
 
@@ -111,7 +124,7 @@ public enum NoteSymbol {
 
         let duration = Duration.slots(String(chars[index...]))
         let midi = Constants.CMIDI + pitchClass.semitones + 12 * octave
-        return .note(Note(pitch: midi, duration: duration))
+        return .note(Note(pitch: midi, duration: duration, spelling: spelling))
     }
 
     /// Parse a whitespace-separated run of note tokens into a list of events.
