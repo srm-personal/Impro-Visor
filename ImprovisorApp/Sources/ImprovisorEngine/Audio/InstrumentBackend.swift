@@ -31,8 +31,8 @@ public protocol InstrumentBackend: AnyObject {
 }
 
 /// One timed message in a flattened playback timeline.
-public struct PlaybackEvent: Equatable {
-    public enum Kind: Equatable {
+public struct PlaybackEvent: Equatable, Sendable {
+    public enum Kind: Equatable, Sendable {
         case program(UInt8)
         case noteOn(pitch: UInt8, velocity: UInt8)
         case noteOff(pitch: UInt8)
@@ -47,16 +47,6 @@ public struct PlaybackEvent: Equatable {
         self.channel = channel
         self.kind = kind
     }
-
-    /// Sort key so that, at the same instant, program changes and note-offs come
-    /// before note-ons (avoids clipping a note-on with a simultaneous off).
-    fileprivate var order: Int {
-        switch kind {
-        case .program: return 0
-        case .noteOff: return 1
-        case .noteOn: return 2
-        }
-    }
 }
 
 public enum PlaybackTimeline {
@@ -64,34 +54,22 @@ public enum PlaybackTimeline {
     /// set, offsetting each repeat by `formSlots` (0 = derive from the tracks).
     /// Timing is the same slot→seconds mapping the SMF writer and live player use
     /// (`Constants.BEAT` slots per quarter).
+    ///
+    /// This is a thin wrapper over `SlotTimeline.events`, which does the actual
+    /// flattening/ordering in slot space (used directly by `Transport` so a
+    /// live tempo change doesn't require re-baking any seconds). This function
+    /// just maps each slot to seconds at a single fixed tempo, for callers that
+    /// want a static, non-live timeline (e.g. tests, one-shot preview).
     public static func events(tracks: [MIDITrack], tempoBPM: Double,
                               loops: Int = 1, formSlots: Int = 0) -> [PlaybackEvent] {
         let secondsPerSlot = 60.0 / (max(1, tempoBPM) * Double(Constants.BEAT))
-        let span = formSlots > 0 ? formSlots : (tracks.flatMap { $0.notes }
-            .map { $0.startTick + max(1, $0.duration) }.max() ?? 0)
-        var events: [PlaybackEvent] = []
-
-        for loop in 0..<max(1, loops) {
-            let slotOffset = loop * span
-            for track in tracks {
-                let ch = track.channel & 0x0F
-                if let program = track.program, loop == 0 {
-                    events.append(PlaybackEvent(seconds: 0, channel: ch, kind: .program(program & 0x7F)))
-                }
-                for note in track.notes {
-                    let onSlot = note.startTick + slotOffset
-                    let offSlot = note.startTick + max(1, note.duration) + slotOffset
-                    events.append(PlaybackEvent(seconds: Double(onSlot) * secondsPerSlot, channel: ch,
-                                                kind: .noteOn(pitch: clampByte(note.pitch),
-                                                              velocity: clampByte(note.velocity))))
-                    events.append(PlaybackEvent(seconds: Double(offSlot) * secondsPerSlot, channel: ch,
-                                                kind: .noteOff(pitch: clampByte(note.pitch))))
-                }
-            }
+        let slotEvents = SlotTimeline.events(tracks: tracks, loops: loops, formSlots: formSlots)
+        // SlotTimeline already sorts by slot then program<off<on, and ties at
+        // the same slot map to the same seconds value, so the ordering carries
+        // over unchanged — no re-sort needed here.
+        return slotEvents.map { e in
+            PlaybackEvent(seconds: Double(e.slot) * secondsPerSlot, channel: e.channel, kind: e.kind)
         }
-
-        events.sort { a, b in a.seconds != b.seconds ? a.seconds < b.seconds : a.order < b.order }
-        return events
     }
 
     /// Total duration of a timeline in seconds.
