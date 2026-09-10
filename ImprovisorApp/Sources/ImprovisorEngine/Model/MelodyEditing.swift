@@ -215,6 +215,17 @@ public extension MusicEvent {
 
 public extension Note {
     func withDuration(_ d: Int) -> Note { Note(pitch: pitch, duration: d, volume: volume, spelling: spelling) }
+
+    /// A black key spelled `.natural` has no letter name of its own; give it the
+    /// key's preference (sharps in sharp keys, flats otherwise) so the note
+    /// survives a save/load round trip unchanged.
+    func withResolvedSpelling(key: Key) -> Note {
+        let pc = ((pitch % 12) + 12) % 12
+        guard spelling == .natural, [1, 3, 6, 8, 10].contains(pc) else { return self }
+        var copy = self
+        copy.spelling = key.index > 0 ? .sharp : .flat
+        return copy
+    }
     /// Flip between the sharp and flat spelling of a black key (no-op on white keys).
     func enharmonicToggled() -> Note {
         let pc = ((pitch % 12) + 12) % 12

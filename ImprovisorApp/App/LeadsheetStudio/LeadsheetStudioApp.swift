@@ -19,5 +19,9 @@ struct LeadsheetStudioApp: App {
             SidebarCommands()
             EditorCommands()
         }
+        Window("Library", id: "library") {
+            LibraryBrowser()
+        }
+        .keyboardShortcut("o", modifiers: [.command, .shift])
     }
 }

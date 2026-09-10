@@ -9,10 +9,27 @@ import SwiftUI
 
 public struct EditorCommands: Commands {
     @FocusedObject private var editor: EditorController?
+    @FocusedValue(\.playbackController) private var playback: PlaybackController?
+    @Environment(\.openWindow) private var openWindow
 
     public init() {}
 
     public var body: some Commands {
+        CommandGroup(after: .newItem) {
+            Button("Open from Library…") { openWindow(id: "library") }
+                .keyboardShortcut("o", modifiers: [.command, .shift])
+        }
+        CommandMenu("Playback") {
+            Button("Play / Pause") { if let e = editor { playback?.togglePlayPause(score: e.document.score) } }
+                .keyboardShortcut("p", modifiers: [.command]).disabled(editor == nil)
+            Button("Stop") { playback?.stop() }.keyboardShortcut(".", modifiers: [.command]).disabled(editor == nil)
+            Button("Play Selection (Loop)") { editor?.perform(.playSelection) }.disabled(editor == nil)
+            Toggle("Loop Form", isOn: Binding(get: { playback?.loopWholeForm ?? false }, set: { playback?.loopWholeForm = $0 }))
+                .keyboardShortcut("l", modifiers: [.command]).disabled(editor == nil)
+            Toggle("Count-in", isOn: Binding(get: { playback?.countIn ?? false }, set: { playback?.countIn = $0 })).disabled(editor == nil)
+            Divider()
+            Button("New Accompaniment") { playback?.regenerate() }.disabled(editor == nil)
+        }
         CommandMenu("Transpose") {
             Group {
                 Button("Melody Up a Semitone") { editor?.transpose(.melody, by: 1) }.keyboardShortcut("e", modifiers: [.command])

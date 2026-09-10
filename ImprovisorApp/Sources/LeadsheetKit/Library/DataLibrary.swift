@@ -119,3 +119,51 @@ public final class DataLibrary: StyleProvider, @unchecked Sendable {
         return nil
     }
 }
+
+/// One bundled leadsheet, indexed from its header for the library browser.
+public struct LibraryEntry: Identifiable, Equatable, Hashable, Sendable {
+    public var id: String { url.path }
+    public var url: URL
+    public var title: String
+    public var composer: String
+    /// Folder under leadsheets/ (e.g. `imaginary-book`).
+    public var folder: String
+    public var fileName: String { url.deletingPathExtension().lastPathComponent }
+}
+
+public extension DataLibrary {
+    /// Index every bundled leadsheet by reading only its header lines.
+    func libraryIndex() -> [LibraryEntry] {
+        let base = url("leadsheets").standardizedFileURL.path
+        return leadsheetURLs().map { url in
+            var title = "", composer = ""
+            if let handle = try? FileHandle(forReadingFrom: url) {
+                let data = handle.readData(ofLength: 600)
+                try? handle.close()
+                let head = String(decoding: data, as: UTF8.self)
+                title = DataLibrary.headerValue("title", in: head)
+                composer = DataLibrary.headerValue("composer", in: head)
+            }
+            if title.isEmpty { title = url.deletingPathExtension().lastPathComponent }
+            let rel = url.standardizedFileURL.path.replacingOccurrences(of: base + "/", with: "")
+            let folder = rel.contains("/") ? String(rel.split(separator: "/").first!) : ""
+            return LibraryEntry(url: url, title: title, composer: composer, folder: folder)
+        }
+    }
+
+    /// Value of `(key …)` in a header snippet, balanced across nested parens.
+    static func headerValue(_ key: String, in text: String) -> String {
+        guard let range = text.range(of: "(\(key) ") ?? text.range(of: "(\(key))") else { return "" }
+        var depth = 1
+        var out = ""
+        var i = range.upperBound
+        while i < text.endIndex {
+            let c = text[i]
+            if c == "(" { depth += 1 }
+            if c == ")" { depth -= 1; if depth == 0 { break } }
+            out.append(c)
+            i = text.index(after: i)
+        }
+        return out.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}

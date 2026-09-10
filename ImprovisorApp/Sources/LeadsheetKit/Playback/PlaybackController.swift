@@ -31,6 +31,19 @@ public final class PlaybackController: ObservableObject {
     @Published public var output: OutputKind = .builtIn
     @Published public var midiDestinationHint = ""
     @Published public var status = ""
+    /// Two-bar count-in before playback.
+    @Published public var countIn = false
+    /// Per-channel mixer overrides (nil = the arrangement's own level).
+    @Published public var mixOverrides: [UInt8: TrackMix] = [:] {
+        didSet { applyMixes() }
+    }
+    @Published public var masterVolume: Double = 1 { didSet { transport?.setMasterVolume(masterVolume) } }
+
+    /// Names of the available MIDI destinations (for the output picker).
+    public var midiDestinationNames: [String] { LiveMIDIPlayer.destinations().map(\.name) }
+
+    /// Test seam: how the audio backend is created.
+    public var backendFactory: (() -> InstrumentBackend?)?
 
     public let library: DataLibrary
     private var backend: InstrumentBackend?
@@ -74,17 +87,16 @@ public final class PlaybackController: ObservableObject {
             }
         }
         transport.load(tracks: arrangement.tracks, slotsPerMeasure: score.meter.slotsPerMeasure)
-        for track in arrangement.tracks {
-            transport.setMix(TrackMix(volume: Double(track.volume) / 127, muted: false), channel: track.channel)
-        }
-        transport.setMasterVolume(Double(arrangement.masterVolume) / 127)
+        self.transport = transport
+        applyMixes()
+        transport.setMasterVolume(masterVolume * Double(arrangement.masterVolume) / 127)
+        transport.setCountIn(bars: countIn ? 2 : 0)
         transport.setTempo(tempo)
         if let loopRange, !loopRange.isEmpty {
             transport.setLoop(LoopSpec(range: loopRange, count: nil))
         } else if loopWholeForm {
             transport.setLoop(LoopSpec(range: 0..<max(1, arrangement.totalSlots), count: nil))
         }
-        self.transport = transport
         transport.play(from: loopRange?.lowerBound ?? startSlot)
         isPlaying = true
         isPaused = false
@@ -152,7 +164,28 @@ public final class PlaybackController: ObservableObject {
         }
     }
 
+    /// The mixer level for a channel: override, else the arrangement's track volume.
+    public func mix(forChannel channel: UInt8) -> TrackMix {
+        if let o = mixOverrides[channel] { return o }
+        let volume = arrangement?.tracks.first { $0.channel == channel }?.volume ?? 127
+        return TrackMix(volume: Double(volume) / 127, muted: false)
+    }
+
+    private func applyMixes() {
+        guard let transport, let arrangement else { return }
+        for track in arrangement.tracks {
+            transport.setMix(mix(forChannel: track.channel), channel: track.channel)
+        }
+    }
+
+    /// New random seed for the accompaniment (takes effect on the next Play).
+    public func regenerate() {
+        seed = Int.random(in: 1...9999)
+        status = "New accompaniment (seed \(seed)) on next play."
+    }
+
     private func makeBackend() -> InstrumentBackend? {
+        if let backendFactory { return backendFactory() }
         switch output {
         case .builtIn: return AVAudioEngineSynth()
         case .coreMIDI: return CoreMIDIBackend(destinationHint: midiDestinationHint.isEmpty ? nil : midiDestinationHint)
