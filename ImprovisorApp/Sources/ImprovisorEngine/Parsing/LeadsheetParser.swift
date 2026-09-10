@@ -158,6 +158,22 @@ public enum LeadsheetParser {
         try parse(String(contentsOf: url, encoding: .utf8), vocabulary: vocabulary)
     }
 
+    /// Parse bar-delimited chord shorthand (`Dm7 | G7 C7 | / |`) on its own into a
+    /// ChordPart, using the same rules as a leadsheet's chord stream. Section
+    /// markers in the text are ignored.
+    public static func chordPart(fromText text: String, meter: Meter, vocabulary: Vocabulary) -> ChordPart {
+        var stream: [ChordToken] = []
+        for form in PolyaParser.parseAll(text) {
+            guard case let .symbol(token) = form, let first = token.first else { continue }
+            if first == "|" || first == "," { stream.append(.bar) }
+            else if first == "/" { stream.append(.slash) }
+            else if first.isLetter && first.isUppercase { stream.append(.chord(token)) }
+        }
+        var ignored = SectionInfo()
+        return buildChordPart(stream: stream, slotsPerBar: meter.slotsPerMeasure,
+                              vocabulary: vocabulary, sections: &ignored)
+    }
+
     // MARK: Pieces
 
     enum ChordToken: Equatable {

@@ -1,0 +1,125 @@
+# XcodeGen spec for the Leadsheet Studio macOS app.
+# Regenerate the .xcodeproj with `scripts/gen.sh` after editing this file.
+name: LeadsheetStudio
+options:
+  bundleIdPrefix: com.srmorin
+  deploymentTarget:
+    macOS: "14.0"
+  xcodeVersion: "26.0"
+  createIntermediateGroups: true
+  generateEmptySchemes: false
+
+packages:
+  Improvisor:
+    path: ..
+
+settings:
+  base:
+    DEVELOPMENT_TEAM: 65KL68N9K8
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    DEAD_CODE_STRIPPING: YES
+
+targets:
+  LeadsheetStudio:
+    type: application
+    platform: macOS
+    sources:
+      - path: LeadsheetStudio
+        excludes: ["Info.plist"]
+      # The Impro-Visor data corpus, copied into Resources as folders.
+      - path: ../../leadsheets
+        type: folder
+        buildPhase: resources
+        group: Corpus
+      - path: ../../styles
+        type: folder
+        buildPhase: resources
+        group: Corpus
+      - path: ../../grammars
+        type: folder
+        buildPhase: resources
+        group: Corpus
+      - path: ../../vocab
+        type: folder
+        buildPhase: resources
+        group: Corpus
+      - path: ../../voicings
+        type: folder
+        buildPhase: resources
+        group: Corpus
+      - path: ../../LICENSE.txt
+        buildPhase: resources
+        group: Corpus
+    dependencies:
+      - package: Improvisor
+        product: LeadsheetKit
+    settings:
+      base:
+        PRODUCT_NAME: LeadsheetStudio
+        PRODUCT_BUNDLE_IDENTIFIER: com.srmorin.LeadsheetStudio
+        ENABLE_HARDENED_RUNTIME: YES
+        ENABLE_APP_SANDBOX: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        COMBINE_HIDPI_IMAGES: YES
+        INFOPLIST_KEY_NSHumanReadableCopyright: ""
+    info:
+      path: LeadsheetStudio/Info.plist
+      properties:
+        CFBundleDisplayName: Leadsheet Studio
+        CFBundleName: Leadsheet Studio
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSApplicationCategoryType: public.app-category.music
+        LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
+        NSHumanReadableCopyright: "Leadsheet Studio is free software under the GNU GPL v2 or later. Based on Impro-Visor, copyright Robert Keller and Harvey Mudd College."
+        NSPrincipalClass: NSApplication
+        NSSupportsAutomaticTermination: true
+        NSSupportsSuddenTermination: false
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: Leadsheet
+            CFBundleTypeRole: Editor
+            LSHandlerRank: Owner
+            LSItemContentTypes: [com.srmorin.leadsheetstudio.leadsheet]
+            NSDocumentClass: ""
+        UTExportedTypeDeclarations:
+          - UTTypeIdentifier: com.srmorin.leadsheetstudio.leadsheet
+            UTTypeDescription: Impro-Visor Leadsheet
+            UTTypeConformsTo: [public.plain-text]
+            UTTypeTagSpecification:
+              public.filename-extension: [ls]
+
+  LeadsheetStudioTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: LeadsheetStudioTests
+    dependencies:
+      - target: LeadsheetStudio
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.srmorin.LeadsheetStudioTests
+        GENERATE_INFOPLIST_FILE: YES
+
+schemes:
+  LeadsheetStudio:
+    build:
+      targets:
+        LeadsheetStudio: all
+        LeadsheetStudioTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets: [LeadsheetStudioTests]
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release

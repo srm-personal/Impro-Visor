@@ -8,3 +8,6 @@ DerivedData/
 *.mid
 *.tune
 *.band/
+build/
+App/LeadsheetStudio.xcodeproj/xcuserdata/
+App/LeadsheetStudio.xcodeproj/project.xcworkspace/xcuserdata/

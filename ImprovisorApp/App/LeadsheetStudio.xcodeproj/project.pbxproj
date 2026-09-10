@@ -1,0 +1,499 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		05E7A6FA50BC5B3BCFDDB316 /* grammars in Resources */ = {isa = PBXBuildFile; fileRef = CF1D32C2BC74055F35802FD6 /* grammars */; };
+		30F91A306B2C12FBA8C14D04 /* LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 73BFA6F982A5475E089D097F /* LICENSE.txt */; };
+		42EEBE5B92E278A3AA586888 /* leadsheets in Resources */ = {isa = PBXBuildFile; fileRef = 7D8EE8E2315A87000CE0062C /* leadsheets */; };
+		77A84959B7032C47846992E8 /* styles in Resources */ = {isa = PBXBuildFile; fileRef = 4791C5499B7F21636C7A5CD5 /* styles */; };
+		805231FF5936607F1DDABF55 /* voicings in Resources */ = {isa = PBXBuildFile; fileRef = 762C029F22BBAB712924CDC7 /* voicings */; };
+		BA1CCFDECBA2CFB53251B494 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1CE26E28395895DE6440F2D3 /* Assets.xcassets */; };
+		CE66AF4968AC090ADACBE112 /* BundleCorpusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF2391D875DD8CA1781F2727 /* BundleCorpusTests.swift */; };
+		D1C7D08A24DE5F78244977B2 /* vocab in Resources */ = {isa = PBXBuildFile; fileRef = EE992526886FD6084557F023 /* vocab */; };
+		EFF19A369552FB4D8757B95D /* LeadsheetKit in Frameworks */ = {isa = PBXBuildFile; productRef = 5B05F9C148BE4E591F3A6317 /* LeadsheetKit */; };
+		F4E42094A631DF4FA62BD740 /* LeadsheetStudioApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1212443102CDA96E56D80B46 /* LeadsheetStudioApp.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		312488E80F0A84A9F550DDF5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4A1A7E3FEC447FECD62CB5D7 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 8DC33205401553E7F8EFE952;
+			remoteInfo = LeadsheetStudio;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		1212443102CDA96E56D80B46 /* LeadsheetStudioApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeadsheetStudioApp.swift; sourceTree = "<group>"; };
+		1CE26E28395895DE6440F2D3 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		4791C5499B7F21636C7A5CD5 /* styles */ = {isa = PBXFileReference; lastKnownFileType = folder; name = styles; path = ../../styles; sourceTree = SOURCE_ROOT; };
+		4D3E317A3D2C90F814343316 /* LeadsheetStudio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LeadsheetStudio.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		73BFA6F982A5475E089D097F /* LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = LICENSE.txt; path = ../../LICENSE.txt; sourceTree = "<group>"; };
+		762C029F22BBAB712924CDC7 /* voicings */ = {isa = PBXFileReference; lastKnownFileType = folder; name = voicings; path = ../../voicings; sourceTree = SOURCE_ROOT; };
+		7D8EE8E2315A87000CE0062C /* leadsheets */ = {isa = PBXFileReference; lastKnownFileType = folder; name = leadsheets; path = ../../leadsheets; sourceTree = SOURCE_ROOT; };
+		944FEB21EDB9A7D4251E88FA /* ImprovisorApp */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ImprovisorApp; path = ..; sourceTree = SOURCE_ROOT; };
+		CF1D32C2BC74055F35802FD6 /* grammars */ = {isa = PBXFileReference; lastKnownFileType = folder; name = grammars; path = ../../grammars; sourceTree = SOURCE_ROOT; };
+		EE992526886FD6084557F023 /* vocab */ = {isa = PBXFileReference; lastKnownFileType = folder; name = vocab; path = ../../vocab; sourceTree = SOURCE_ROOT; };
+		EF2391D875DD8CA1781F2727 /* BundleCorpusTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundleCorpusTests.swift; sourceTree = "<group>"; };
+		FF457ED17465C9C454F67B0D /* LeadsheetStudioTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LeadsheetStudioTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		8B66547CB5A70A58A09BE97E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EFF19A369552FB4D8757B95D /* LeadsheetKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		4A69CA02C24D7E53BDBB7BCE /* LeadsheetStudio */ = {
+			isa = PBXGroup;
+			children = (
+				1CE26E28395895DE6440F2D3 /* Assets.xcassets */,
+				1212443102CDA96E56D80B46 /* LeadsheetStudioApp.swift */,
+			);
+			path = LeadsheetStudio;
+			sourceTree = "<group>";
+		};
+		A6BFB6EC6B025F0A2360EAF5 = {
+			isa = PBXGroup;
+			children = (
+				E7126D7D13F75051887F8645 /* Corpus */,
+				4A69CA02C24D7E53BDBB7BCE /* LeadsheetStudio */,
+				EABD47E57B7A28B3E6428E84 /* LeadsheetStudioTests */,
+				E4A21E9EEEFF9E576157495B /* Packages */,
+				B5DA9C4A0C64EED95BF09077 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		B5DA9C4A0C64EED95BF09077 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				4D3E317A3D2C90F814343316 /* LeadsheetStudio.app */,
+				FF457ED17465C9C454F67B0D /* LeadsheetStudioTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		E4A21E9EEEFF9E576157495B /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				944FEB21EDB9A7D4251E88FA /* ImprovisorApp */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		E7126D7D13F75051887F8645 /* Corpus */ = {
+			isa = PBXGroup;
+			children = (
+				CF1D32C2BC74055F35802FD6 /* grammars */,
+				7D8EE8E2315A87000CE0062C /* leadsheets */,
+				73BFA6F982A5475E089D097F /* LICENSE.txt */,
+				4791C5499B7F21636C7A5CD5 /* styles */,
+				EE992526886FD6084557F023 /* vocab */,
+				762C029F22BBAB712924CDC7 /* voicings */,
+			);
+			name = Corpus;
+			sourceTree = "<group>";
+		};
+		EABD47E57B7A28B3E6428E84 /* LeadsheetStudioTests */ = {
+			isa = PBXGroup;
+			children = (
+				EF2391D875DD8CA1781F2727 /* BundleCorpusTests.swift */,
+			);
+			path = LeadsheetStudioTests;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		597D502E2F185CF6FE55A6F6 /* LeadsheetStudioTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 180B46FFE8D4D7ADB8DAD19E /* Build configuration list for PBXNativeTarget "LeadsheetStudioTests" */;
+			buildPhases = (
+				F67A118D31D06690B62B1F42 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				83302778B2C22989A1D65488 /* PBXTargetDependency */,
+			);
+			name = LeadsheetStudioTests;
+			packageProductDependencies = (
+			);
+			productName = LeadsheetStudioTests;
+			productReference = FF457ED17465C9C454F67B0D /* LeadsheetStudioTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		8DC33205401553E7F8EFE952 /* LeadsheetStudio */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 02B66011AC1F21C4576D6D56 /* Build configuration list for PBXNativeTarget "LeadsheetStudio" */;
+			buildPhases = (
+				4B253D6D9460A8E8C4C8809A /* Sources */,
+				9DC33E3A97121E5D6AD72324 /* Resources */,
+				8B66547CB5A70A58A09BE97E /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LeadsheetStudio;
+			packageProductDependencies = (
+				5B05F9C148BE4E591F3A6317 /* LeadsheetKit */,
+			);
+			productName = LeadsheetStudio;
+			productReference = 4D3E317A3D2C90F814343316 /* LeadsheetStudio.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		4A1A7E3FEC447FECD62CB5D7 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 2600;
+				TargetAttributes = {
+					597D502E2F185CF6FE55A6F6 = {
+						DevelopmentTeam = 65KL68N9K8;
+						ProvisioningStyle = Automatic;
+					};
+					8DC33205401553E7F8EFE952 = {
+						DevelopmentTeam = 65KL68N9K8;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 6237B99147CB61C78E507285 /* Build configuration list for PBXProject "LeadsheetStudio" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = A6BFB6EC6B025F0A2360EAF5;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				8D3EB0802AD4E06045F0E03A /* XCLocalSwiftPackageReference ".." */,
+			);
+			preferredProjectObjectVersion = 77;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				8DC33205401553E7F8EFE952 /* LeadsheetStudio */,
+				597D502E2F185CF6FE55A6F6 /* LeadsheetStudioTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		9DC33E3A97121E5D6AD72324 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BA1CCFDECBA2CFB53251B494 /* Assets.xcassets in Resources */,
+				30F91A306B2C12FBA8C14D04 /* LICENSE.txt in Resources */,
+				05E7A6FA50BC5B3BCFDDB316 /* grammars in Resources */,
+				42EEBE5B92E278A3AA586888 /* leadsheets in Resources */,
+				77A84959B7032C47846992E8 /* styles in Resources */,
+				D1C7D08A24DE5F78244977B2 /* vocab in Resources */,
+				805231FF5936607F1DDABF55 /* voicings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		4B253D6D9460A8E8C4C8809A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F4E42094A631DF4FA62BD740 /* LeadsheetStudioApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F67A118D31D06690B62B1F42 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CE66AF4968AC090ADACBE112 /* BundleCorpusTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		83302778B2C22989A1D65488 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 8DC33205401553E7F8EFE952 /* LeadsheetStudio */;
+			targetProxy = 312488E80F0A84A9F550DDF5 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		1011A509A5C2A4BA4DC6A492 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.srmorin.LeadsheetStudioTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/LeadsheetStudio.app/Contents/MacOS/LeadsheetStudio";
+			};
+			name = Debug;
+		};
+		19D72CFBC70E1B40CE7CB769 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 65KL68N9K8;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		4611F649811AECA36D7C34DD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = LeadsheetStudio/Info.plist;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.srmorin.LeadsheetStudio;
+				PRODUCT_NAME = LeadsheetStudio;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		6B10B6384CE50B2EF3D50F86 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = LeadsheetStudio/Info.plist;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.srmorin.LeadsheetStudio;
+				PRODUCT_NAME = LeadsheetStudio;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		7E94EC9EAB56B11D0608FD65 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.srmorin.LeadsheetStudioTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/LeadsheetStudio.app/Contents/MacOS/LeadsheetStudio";
+			};
+			name = Release;
+		};
+		D67494630925A2C027039D78 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 65KL68N9K8;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		02B66011AC1F21C4576D6D56 /* Build configuration list for PBXNativeTarget "LeadsheetStudio" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4611F649811AECA36D7C34DD /* Debug */,
+				6B10B6384CE50B2EF3D50F86 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		180B46FFE8D4D7ADB8DAD19E /* Build configuration list for PBXNativeTarget "LeadsheetStudioTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1011A509A5C2A4BA4DC6A492 /* Debug */,
+				7E94EC9EAB56B11D0608FD65 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		6237B99147CB61C78E507285 /* Build configuration list for PBXProject "LeadsheetStudio" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				19D72CFBC70E1B40CE7CB769 /* Debug */,
+				D67494630925A2C027039D78 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		8D3EB0802AD4E06045F0E03A /* XCLocalSwiftPackageReference ".." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ..;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		5B05F9C148BE4E591F3A6317 /* LeadsheetKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = LeadsheetKit;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 4A1A7E3FEC447FECD62CB5D7 /* Project object */;
+}

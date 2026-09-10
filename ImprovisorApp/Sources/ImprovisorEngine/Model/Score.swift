@@ -151,6 +151,20 @@ public struct Score: Equatable, Sendable {
     /// The primary melody part, if any.
     public var melodyPart: MelodyPart? { melodyParts.first }
 
+    /// A new, empty tune: `measures` bars of "no chord" and one melody chorus of
+    /// rests, with a single section in `styleName`.
+    public static func blank(measures: Int = 32, meter: Meter = .fourFour,
+                             styleName: String = "swing", tempo: Double = 160) -> Score {
+        let bars = max(1, measures)
+        var chords = ChordPart()
+        chords.append(.noChord, duration: bars * meter.slotsPerMeasure)
+        let rests = (0..<bars).map { _ in MusicEvent.rest(Rest(duration: meter.slotsPerMeasure)) }
+        return Score(meter: meter, tempo: tempo, styleName: styleName,
+                     chordPart: chords,
+                     melodyParts: [MelodyPart(events: rests)],
+                     sections: SectionInfo(records: [SectionRecord(measure: 0, styleName: styleName)]))
+    }
+
     /// Number of measures spanned by the chord part.
     public var measureCount: Int {
         guard meter.slotsPerMeasure > 0 else { return 0 }

@@ -8,28 +8,35 @@ let package = Package(
     ],
     products: [
         .library(name: "ImprovisorEngine", targets: ["ImprovisorEngine"]),
-        .executable(name: "improvisor-demo", targets: ["improvisor-demo"]),
-        .executable(name: "improvisor-app", targets: ["improvisor-app"])
+        .library(name: "LeadsheetKit", targets: ["LeadsheetKit"]),
+        .executable(name: "improvisor-demo", targets: ["improvisor-demo"])
     ],
     targets: [
+        // Pure music engine: parsing, model, generators, audio backends.
         .target(
             name: "ImprovisorEngine",
             path: "Sources/ImprovisorEngine"
+        ),
+        // SwiftUI document/editor layer shared by the Leadsheet Studio app.
+        .target(
+            name: "LeadsheetKit",
+            dependencies: ["ImprovisorEngine"],
+            path: "Sources/LeadsheetKit"
         ),
         .executableTarget(
             name: "improvisor-demo",
             dependencies: ["ImprovisorEngine"],
             path: "Sources/improvisor-demo"
         ),
-        .executableTarget(
-            name: "improvisor-app",
-            dependencies: ["ImprovisorEngine"],
-            path: "Sources/improvisor-app"
-        ),
         .testTarget(
             name: "ImprovisorEngineTests",
             dependencies: ["ImprovisorEngine"],
             path: "Tests/ImprovisorEngineTests"
+        ),
+        .testTarget(
+            name: "LeadsheetKitTests",
+            dependencies: ["LeadsheetKit"],
+            path: "Tests/LeadsheetKitTests"
         )
     ]
 )

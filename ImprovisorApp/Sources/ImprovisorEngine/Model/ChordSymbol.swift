@@ -31,6 +31,12 @@ public struct ChordSymbol: Equatable, Sendable {
     /// Whether this is the "no chord" (NC) symbol.
     public var isNoChord: Bool { name == ChordSymbol.noChordName }
 
+    /// The "no chord" symbol (needs no vocabulary).
+    public static let noChord: ChordSymbol = {
+        let c = PitchClass.named("c")!
+        return ChordSymbol(name: noChordName, root: c, type: noChordName, bass: c, form: nil, scaleTones: [])
+    }()
+
     // MARK: Derived pitch content
 
     /// Chord tones (pitch classes) at this chord's root, or `[]` if unresolved.
