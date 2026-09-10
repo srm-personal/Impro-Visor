@@ -17,6 +17,13 @@ public struct DocumentView: View {
     @StateObject private var playback: PlaybackController
     @Environment(\.undoManager) private var undoManager
     @State private var chordText = ""
+    @State private var showChordText = false
+
+    private var staveOptions: StaveOptions {
+        var o = StaveOptions()
+        o.measuresPerLine = document.score.layout.first ?? 4
+        return o
+    }
 
     public init(document: LeadsheetDocument, library: DataLibrary = .shared) {
         self.document = document
@@ -26,20 +33,23 @@ public struct DocumentView: View {
     private var library: DataLibrary { playback.library }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 10) {
             header
-            Divider()
-            chordsSection
-            Divider()
+            StaveView(score: document.score, part: 0, options: staveOptions,
+                      overlay: StaveRenderer.Overlay(playheadSlot: playback.isPlaying ? playback.positionSlot % max(1, document.score.chordPart.size) : nil))
+                .frame(minHeight: 260)
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .overlay(RoundedRectangle(cornerRadius: 6).stroke(.quaternary))
+                .accessibilityIdentifier("stave")
+            DisclosureGroup("Chords as text", isExpanded: $showChordText) { chordsSection }
             settings
             Divider()
             transport
-            Spacer(minLength: 0)
             Text(playback.status).font(.callout).foregroundStyle(.secondary)
                 .accessibilityIdentifier("status")
         }
-        .padding(20)
-        .frame(minWidth: 640, minHeight: 520)
+        .padding(16)
+        .frame(minWidth: 720, minHeight: 600)
         .onAppear {
             chordText = LeadsheetWriter.progressionText(document.score.chordPart, meter: document.score.meter)
             if document.score.tempo > 0 { playback.tempo = min(300, max(30, document.score.tempo)) }
