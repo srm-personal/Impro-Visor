@@ -142,9 +142,14 @@ public struct AccompanimentGenerator {
             return chord.bass.semitones
         case "N", "n":
             return next.bass.semitones
-        case "C", "c", "S", "s":
-            // Chord tone (S approximates a scale tone with a chord tone for now).
+        case "C", "c":
             let tones = chord.chordTones.map(\.semitones)
+            guard !tones.isEmpty else { return chord.bass.semitones }
+            return tones[Int.random(in: 0..<tones.count, using: &rng)]
+        case "S", "s":
+            // Scale tone from the chord's preferred scale (falls back to chord tones).
+            let scale = chord.scaleTones.map(\.semitones)
+            let tones = scale.isEmpty ? chord.chordTones.map(\.semitones) : scale
             guard !tones.isEmpty else { return chord.bass.semitones }
             return tones[Int.random(in: 0..<tones.count, using: &rng)]
         case "A", "a":

@@ -102,3 +102,17 @@ public struct Style: Equatable, Sendable {
         self.drumPatterns = drumPatterns
     }
 }
+
+extension Style {
+    /// This style with a leadsheet's inline parameter overrides applied — the
+    /// `(swing 0.55) (bass-low g--) …` forms that follow the style name in a
+    /// `.ls` header (`Score.styleOverride`). Mirrors Java's `style.load(param)`.
+    public func applying(override: Polylist?) -> Style {
+        guard let override, override.nonEmpty else { return self }
+        var copy = self
+        for param in override {
+            StyleParser.apply(param, to: &copy)
+        }
+        return copy
+    }
+}

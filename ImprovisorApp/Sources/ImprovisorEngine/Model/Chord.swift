@@ -66,4 +66,22 @@ public struct ChordPart: Equatable, Sendable {
 
     /// The number of chords.
     public var count: Int { entries.count }
+
+    /// The chords sounding within `range` (absolute slots), clipped to it and
+    /// re-based so the slice starts at slot 0. Chords that begin before the
+    /// range start at 0 with their remaining duration.
+    public func slice(_ range: Range<Int>) -> ChordPart {
+        var out = ChordPart(info: info)
+        guard !range.isEmpty else { return out }
+        for entry in entries {
+            let start = max(entry.start, range.lowerBound)
+            let end = min(entry.end, range.upperBound)
+            if end > start {
+                out.entries.append(Entry(symbol: entry.symbol, start: start - range.lowerBound,
+                                         duration: end - start))
+            }
+        }
+        out.size = out.entries.last?.end ?? 0
+        return out
+    }
 }

@@ -14,7 +14,7 @@
 import Foundation
 
 /// One instrument track to be written to the MIDI file.
-public struct MIDITrack {
+public struct MIDITrack: Equatable, Sendable {
     public var name: String
     /// MIDI channel (0–15). Drums use 9.
     public var channel: UInt8
@@ -22,8 +22,11 @@ public struct MIDITrack {
     /// (drums ignore program on channel 9).
     public var program: UInt8?
     public var notes: [ScheduledNote]
+    /// Channel volume 0–127 (MIDI CC 7); the mixer level for this track.
+    public var volume: Int
 
-    public init(name: String, channel: UInt8, program: UInt8?, notes: [ScheduledNote]) {
+    public init(name: String, channel: UInt8, program: UInt8?, notes: [ScheduledNote], volume: Int = 127) {
+        self.volume = max(0, min(127, volume))
         self.name = name
         self.channel = channel
         self.program = program
@@ -102,6 +105,11 @@ public enum MIDIFileWriter {
         if let program = track.program {
             body.appendVLQ(0)
             body.append(contentsOf: [0xC0 | (track.channel & 0x0F), program & 0x7F])
+        }
+        // Channel volume (CC 7).
+        if track.volume < 127 {
+            body.appendVLQ(0)
+            body.append(contentsOf: [0xB0 | (track.channel & 0x0F), 0x07, UInt8(track.volume)])
         }
 
         // Build note-on/off events, sorted by tick (offs before ons at a tie so

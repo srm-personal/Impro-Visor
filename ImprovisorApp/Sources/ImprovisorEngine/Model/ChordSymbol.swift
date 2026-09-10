@@ -21,6 +21,9 @@ public struct ChordSymbol: Equatable, Sendable {
     public let bass: PitchClass
     /// The resolved chord form, or `nil` for "no chord" / unknown types.
     public let form: ChordForm?
+    /// Pitch classes of the chord's preferred scale (first in the vocab's
+    /// `(scales …)` list) at this root; empty if unknown.
+    public let scaleTones: [PitchClass]
 
     /// The literal "no chord" symbol.
     public static let noChordName = "NC"
@@ -50,7 +53,7 @@ public struct ChordSymbol: Equatable, Sendable {
 
         if name == noChordName {
             let c = PitchClass.named("c")!
-            return ChordSymbol(name: name, root: c, type: noChordName, bass: c, form: nil)
+            return ChordSymbol(name: name, root: c, type: noChordName, bass: c, form: nil, scaleTones: [])
         }
 
         let chars = Array(name)
@@ -90,6 +93,7 @@ public struct ChordSymbol: Equatable, Sendable {
         }
 
         let form = vocabulary.chordForm(named: "C" + type)
-        return ChordSymbol(name: name, root: root, type: type, bass: bass, form: form)
+        let scale = form?.firstScaleTones(root: root, vocabulary: vocabulary) ?? []
+        return ChordSymbol(name: name, root: root, type: type, bass: bass, form: form, scaleTones: scale)
     }
 }

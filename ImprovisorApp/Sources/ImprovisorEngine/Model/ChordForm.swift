@@ -34,15 +34,19 @@ public struct ChordForm: Equatable, Sendable {
     public let priority: [PitchClass]
     /// The named voicings (C-rooted absolute MIDI), from `voicings`.
     public let voicings: [Voicing]
+    /// Scales usable over this chord, as `(root type)` pairs relative to the
+    /// C-rooted form (e.g. `(G major pentatonic)` over CM7), first = preferred.
+    public let scales: [ScaleReference]
 
     public init(name: String, family: String, spell: [PitchClass], color: [PitchClass],
-                priority: [PitchClass] = [], voicings: [Voicing] = []) {
+                priority: [PitchClass] = [], voicings: [Voicing] = [], scales: [ScaleReference] = []) {
         self.name = name
         self.family = family
         self.spell = spell
         self.color = color
         self.priority = priority
         self.voicings = voicings
+        self.scales = scales
     }
 
     /// The chord tones transposed so the chord's root is `root`.
@@ -64,6 +68,25 @@ public struct ChordForm: Equatable, Sendable {
     public func voicings(root: PitchClass) -> [Voicing] {
         voicings.map { $0.transposed(by: root.semitones) }
     }
+
+    /// Pitch classes of the preferred (first-listed) scale for this chord at
+    /// `root`, resolved through `vocabulary`; empty if none is known.
+    public func firstScaleTones(root: PitchClass, vocabulary: Vocabulary) -> [PitchClass] {
+        guard let ref = scales.first else { return [] }
+        return vocabulary.scaleTones(ref, chordRoot: root)
+    }
+}
+
+/// A scale named in a chord form's `(scales …)` list: `(G major pentatonic)`
+/// → root G (relative to the C-rooted form), type `major pentatonic`.
+public struct ScaleReference: Equatable, Hashable, Sendable {
+    public let root: PitchClass
+    public let type: String
+
+    public init(root: PitchClass, type: String) {
+        self.root = root
+        self.type = type
+    }
 }
 
 /// Loads and indexes the chord (and, later, scale) definitions from a vocabulary
@@ -72,14 +95,35 @@ public struct ChordForm: Equatable, Sendable {
 public final class Vocabulary: Sendable {
     private let forms: [String: ChordForm]
     private let aliases: [String: String]
+    /// Scale spellings at root C, keyed by type (`major`, `bebop dominant`, …).
+    private let scales: [String: [PitchClass]]
 
     public init(source: String) {
         var forms: [String: ChordForm] = [:]
         var aliases: [String: String] = [:]
+        var scales: [String: [PitchClass]] = [:]
 
         for form in PolyaParser.parseAll(source) {
-            guard case let .list(list) = form,
-                  list.firstOrNil() == .symbol("chord"),
+            guard case let .list(list) = form else { continue }
+
+            // (scale (name C major) (spell c d e f g a b c))
+            if list.firstOrNil() == .symbol("scale") {
+                if let nameList = list.assoc("name") {
+                    let words = nameList.rest().toArray().compactMap(\.symbolValue)
+                    if words.count >= 2, let root = PitchClass.named(words[0].lowercased()) {
+                        let type = words.dropFirst().joined(separator: " ")
+                        let spelled = Vocabulary.pitchClasses(list.assoc("spell"))
+                            .map { $0.transposed(by: -root.semitones) }
+                        // Drop the repeated octave note if present.
+                        var tones: [PitchClass] = []
+                        for pc in spelled where !tones.contains(where: { $0.semitones == pc.semitones }) { tones.append(pc) }
+                        scales[type] = tones
+                    }
+                }
+                continue
+            }
+
+            guard list.firstOrNil() == .symbol("chord"),
                   let nameList = list.assoc("name"),
                   case let .symbol(name)? = nameList.secondOrNil()
             else { continue }
@@ -95,12 +139,39 @@ public final class Vocabulary: Sendable {
             let priority = Vocabulary.pitchClasses(list.assoc("priority"))
             let voicings = Vocabulary.voicings(list.assoc("voicings"))
             let family = list.assoc("family").flatMap { $0.secondOrNil()?.symbolValue } ?? "unknown"
+            let scaleRefs = Vocabulary.scaleReferences(list.assoc("scales"))
             forms[name] = ChordForm(name: name, family: family, spell: spell, color: color,
-                                    priority: priority, voicings: voicings)
+                                    priority: priority, voicings: voicings, scales: scaleRefs)
         }
 
         self.forms = forms
         self.aliases = aliases
+        self.scales = scales
+    }
+
+    /// Parse `(scales (C major) (G major pentatonic) …)`.
+    private static func scaleReferences(_ list: Polylist?) -> [ScaleReference] {
+        guard let list else { return [] }
+        return list.rest().toArray().compactMap { entry -> ScaleReference? in
+            guard case let .list(pair) = entry else { return nil }
+            let words = pair.toArray().compactMap(\.symbolValue)
+            guard words.count >= 2, let root = PitchClass.named(words[0].lowercased()) else { return nil }
+            return ScaleReference(root: root, type: words.dropFirst().joined(separator: " "))
+        }
+    }
+
+    /// The C-rooted spelling of a scale type (e.g. `"major"`), or `nil`.
+    public func scale(named type: String) -> [PitchClass]? { scales[type] }
+
+    /// Number of scale types loaded.
+    public var scaleCount: Int { scales.count }
+
+    /// Pitch classes of `ref` (a scale relative to a C-rooted chord form) when
+    /// the chord is played at `chordRoot`.
+    public func scaleTones(_ ref: ScaleReference, chordRoot: PitchClass) -> [PitchClass] {
+        guard let base = scales[ref.type] else { return [] }
+        let shift = ref.root.semitones + chordRoot.semitones
+        return base.map { $0.transposed(by: shift) }
     }
 
     /// Convenience: build a vocabulary from a `.voc` file on disk.

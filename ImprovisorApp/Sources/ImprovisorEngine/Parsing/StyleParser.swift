@@ -24,36 +24,40 @@ public enum StyleParser {
         else { throw ParseError.notAStyle }
 
         var style = Style()
-
         for element in top.rest() {
-            guard case let .list(entry) = element,
-                  case let .symbol(key) = entry.firstOrNil()
-            else { continue }
-            let rest = entry.rest()
-
-            switch key {
-            case "name": style.name = rest.firstOrNil()?.description ?? ""
-            case "swing": style.swing = rest.firstOrNil()?.doubleValue ?? style.swing
-            case "comp-swing": style.compSwing = rest.firstOrNil()?.doubleValue ?? style.compSwing
-            case "voicing-type": style.voicingType = rest.firstOrNil()?.description ?? style.voicingType
-            case "voicing-name": style.voicingFileName = rest.firstOrNil()?.description ?? style.voicingFileName
-            case "bass-high": style.bassHigh = rest.firstOrNil()?.description ?? style.bassHigh
-            case "bass-low": style.bassLow = rest.firstOrNil()?.description ?? style.bassLow
-            case "bass-base": style.bassBase = rest.firstOrNil()?.description ?? style.bassBase
-            case "chord-high": style.chordHigh = rest.firstOrNil()?.description ?? style.chordHigh
-            case "chord-low": style.chordLow = rest.firstOrNil()?.description ?? style.chordLow
-            case "bass-pattern":
-                if let p = parsePattern(entry) { style.bassPatterns.append(p) }
-            case "chord-pattern":
-                if let p = parsePattern(entry) { style.chordPatterns.append(p) }
-            case "drum-pattern":
-                if let p = parseDrumPattern(entry) { style.drumPatterns.append(p) }
-            default:
-                break
-            }
+            apply(element, to: &style)
         }
-
         return style
+    }
+
+    /// Apply one `(key value…)` style entry to `style`. Shared by file parsing
+    /// and by leadsheet-embedded overrides (`Style.applying(override:)`).
+    static func apply(_ element: PolyValue, to style: inout Style) {
+        guard case let .list(entry) = element,
+              case let .symbol(key) = entry.firstOrNil()
+        else { return }
+        let rest = entry.rest()
+
+        switch key {
+        case "name": style.name = rest.firstOrNil()?.description ?? ""
+        case "swing": style.swing = rest.firstOrNil()?.doubleValue ?? style.swing
+        case "comp-swing": style.compSwing = rest.firstOrNil()?.doubleValue ?? style.compSwing
+        case "voicing-type": style.voicingType = rest.firstOrNil()?.description ?? style.voicingType
+        case "voicing-name": style.voicingFileName = rest.firstOrNil()?.description ?? style.voicingFileName
+        case "bass-high": style.bassHigh = rest.firstOrNil()?.description ?? style.bassHigh
+        case "bass-low": style.bassLow = rest.firstOrNil()?.description ?? style.bassLow
+        case "bass-base": style.bassBase = rest.firstOrNil()?.description ?? style.bassBase
+        case "chord-high": style.chordHigh = rest.firstOrNil()?.description ?? style.chordHigh
+        case "chord-low": style.chordLow = rest.firstOrNil()?.description ?? style.chordLow
+        case "bass-pattern":
+            if let p = parsePattern(entry) { style.bassPatterns.append(p) }
+        case "chord-pattern":
+            if let p = parsePattern(entry) { style.chordPatterns.append(p) }
+        case "drum-pattern":
+            if let p = parseDrumPattern(entry) { style.drumPatterns.append(p) }
+        default:
+            break
+        }
     }
 
     /// Convenience: parse a `.sty` file from disk.
