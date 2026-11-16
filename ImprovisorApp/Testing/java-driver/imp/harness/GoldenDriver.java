@@ -65,6 +65,14 @@ public static void main(String[] args) throws Exception
     }
   init();
   if( mode.equals("counts") )      { counts(args[1], args[2]); }
+  else if( mode.equals("roundtrip") ) { roundtrip(args[1], args[2]); }
+  else if( mode.equals("save") )
+    {
+    // save LEADSHEET OUT.ls — Java's own writer, for comparing with Swift's.
+    java.io.BufferedWriter w = new java.io.BufferedWriter(new java.io.FileWriter(args[2]));
+    Leadsheet.saveLeadSheet(w, load(args[1]), false);
+    w.close();
+    }
   else if( mode.equals("styles") ) { styles(args[1]); }
   else if( mode.equals("render") ) { render(args[1], args[2]); }
   else { usage(); }
@@ -132,7 +140,87 @@ static Score load(String path) throws Exception
     {
     stream.close();
     }
+  // The GUI normalizes part lengths as soon as it touches the score
+  // (Score.size() → checkLength()); do the same so renders match the app.
+  score.checkLength();
   return score;
+  }
+
+/** Counts row for a score (shared by `counts` and `roundtrip`). */
+static String describe(Score score)
+  {
+  StringBuilder b = new StringBuilder();
+  ChordPart chords = score.getChordProg();
+  int units = 0;
+  StringBuilder first = new StringBuilder();
+  Part.PartIterator it = chords.iterator();
+  while( it.hasNext() )
+    {
+    Chord c = (Chord)it.next();
+    if( units < 6 )
+      {
+      if( units > 0 ) first.append(' ');
+      first.append(c.getName()).append('/').append(c.getRhythmValue());
+      }
+    units++;
+    }
+  StringBuilder parts = new StringBuilder();
+  for( int p = 0; p < score.size(); p++ )
+    {
+    MelodyPart m = score.getPart(p);
+    int notes = 0, rests = 0;
+    Part.PartIterator mi = m.iterator();
+    while( mi.hasNext() )
+      {
+      Unit u = mi.next();
+      if( u instanceof Note )
+        {
+        if( ((Note)u).isRest() ) rests++; else notes++;
+        }
+      }
+    if( p > 0 ) parts.append(' ');
+    parts.append(m.size()).append(':').append(notes).append(':').append(rests);
+    }
+  int[] metre = score.getMetre();
+  b.append("\tok\t").append(metre[0]).append('/').append(metre[1]);
+  b.append('\t').append(score.getTempo());
+  b.append('\t').append(score.getKeySignature());
+  b.append('\t').append(chords.size());
+  b.append('\t').append(units);
+  b.append('\t').append(chords.getSectionInfo().size());
+  b.append('\t').append(score.size());
+  b.append('\t').append(parts);
+  b.append('\t').append(clean(first.toString()));
+  return b.toString();
+  }
+
+/** Java's own load → save → reload, reported in the `counts` format. */
+static void roundtrip(String listFile, String outFile) throws Exception
+  {
+  PrintWriter out = new PrintWriter(outFile, "UTF-8");
+  File tmp = File.createTempFile("harness", ".ls");
+  for( String path : readLines(listFile) )
+    {
+    StringBuilder b = new StringBuilder(path);
+    try
+      {
+      Score score = load(path);
+      java.io.BufferedWriter w = new java.io.BufferedWriter(new java.io.FileWriter(tmp));
+      Leadsheet.saveLeadSheet(w, score, false);
+      w.close();
+      b.append(describe(load(tmp.getPath())));
+      }
+    catch( Throwable t )
+      {
+      b.append("\tthrew\t").append(clean(t.toString()));
+      }
+    List<String> messages = ErrorLog.drain();
+    b.append('\t').append(messages.size());
+    if( !messages.isEmpty() ) b.append(' ').append(clean(messages.get(0)));
+    out.println(b);
+    }
+  tmp.delete();
+  out.close();
   }
 
 static List<String> readLines(String file) throws Exception
@@ -169,48 +257,7 @@ static void counts(String listFile, String outFile) throws Exception
     StringBuilder b = new StringBuilder(path);
     try
       {
-      Score score = load(path);
-      ChordPart chords = score.getChordProg();
-      int units = 0;
-      StringBuilder first = new StringBuilder();
-      Part.PartIterator it = chords.iterator();
-      while( it.hasNext() )
-        {
-        Chord c = (Chord)it.next();
-        if( units < 6 )
-          {
-          if( units > 0 ) first.append(' ');
-          first.append(c.getName()).append('/').append(c.getRhythmValue());
-          }
-        units++;
-        }
-      StringBuilder parts = new StringBuilder();
-      for( int p = 0; p < score.size(); p++ )
-        {
-        MelodyPart m = score.getPart(p);
-        int notes = 0, rests = 0;
-        Part.PartIterator mi = m.iterator();
-        while( mi.hasNext() )
-          {
-          Unit u = mi.next();
-          if( u instanceof Note )
-            {
-            if( ((Note)u).isRest() ) rests++; else notes++;
-            }
-          }
-        if( p > 0 ) parts.append(' ');
-        parts.append(m.size()).append(':').append(notes).append(':').append(rests);
-        }
-      int[] metre = score.getMetre();
-      b.append("\tok\t").append(metre[0]).append('/').append(metre[1]);
-      b.append('\t').append(score.getTempo());
-      b.append('\t').append(score.getKeySignature());
-      b.append('\t').append(chords.size());
-      b.append('\t').append(units);
-      b.append('\t').append(chords.getSectionInfo().size());
-      b.append('\t').append(score.size());
-      b.append('\t').append(parts);
-      b.append('\t').append(clean(first.toString()));
+      b.append(describe(load(path)));
       }
     catch( Throwable t )
       {

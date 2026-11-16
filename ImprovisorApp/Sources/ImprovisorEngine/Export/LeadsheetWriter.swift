@@ -81,11 +81,17 @@ public enum LeadsheetWriter {
 
     /// Section markers interleaved with the bar-delimited chord text.
     static func chordsBody(_ score: Score) -> String {
-        let measures = score.measureCount
+        // Java (Chord.saveLeadsheet) only flushes a bar once a whole measure
+        // has accumulated, so a trailing PARTIAL bar — which exists when the
+        // melody is longer than the chords by less than a bar and the last
+        // chord was stretched to match — is not written. On reload the last
+        // chord is stretched again, so the model is unchanged.
+        let slotsPerBar = score.meter.slotsPerMeasure
+        let measures = slotsPerBar > 0 ? score.chordPart.size / slotsPerBar : 0
         let records = score.sections.records
         var out = ""
         if records.isEmpty {
-            let text = progressionText(score.chordPart, meter: score.meter)
+            let text = progressionText(score.chordPart, meter: score.meter, measures: 0..<measures)
             if !text.isEmpty { out += text + "\n" }
             return out
         }
