@@ -82,26 +82,43 @@ reports to `Testing/.build/reports`.
 4. `FEATURE_COVERAGE.md` inventory.
 5. XCUITest smoke suite for the practice loop.
 
-## Remaining work (state when the session stopped, 2026-11-16)
+## State (2026-11-16)
 
-Done: Java headless build + driver, 855 goldens, `JavaRandom`, leadsheet
-sweep 3280/3280, round trip 3280/3280, comparison test with diffs.
-Not done: engine re-port (0/855), style sweep (63/145), solo goldens,
-FEATURE_COVERAGE.md, XCUITest suite.
+| Check | Before | Now |
+|---|---|---|
+| Leadsheets matching Java's parse (3,280) | 3,241 | 3,280 |
+| Leadsheet load → save → reload stable | 3,280 | 3,280 |
+| Styles matching Java's patterns (145) | 50 | 145 |
+| Golden accompaniment cases identical (855) | 0 | 851 |
+| — bass / chords / drums / melody tracks | 0 / 1 / 2 / 420 | 846 / 851 / 840 / 427 |
 
-Facts established from the Java source that the engine port must reproduce:
+Run everything: `cd ImprovisorApp && swift test` (≈45 s). The one failing
+test is `GoldenComparisonTests` (4 cases, BUG_LOG O-03). Reports land in
+`Testing/.build/reports/` (`golden-diff.txt`, `swift-events/<case>.events.txt`
+to diff against `goldens/accompaniment/<case>.events.txt`).
+
+Open: O-03 interpolation/substitution (2 styles), O-06 solo goldens (blocked
+on `Notate`), O-04 custom voicing, O-05 channel numbers, O-07 playback
+transposition. UI tests: `scripts/uitest.sh` — only the open-tune test was
+verified in the agent session.
+
+## How the engine port is organised
+
+`Style/StyleRenderer.swift` is the port of `Style.render` and the pattern
+classes; `ArrangementBuilder` is `Score.render` + `SectionInfo.render`;
+`Util/JavaRandom.swift` is the stream. Facts worth knowing before touching it:
 
 - One RNG stream. Per section, in order: drum patterns for the whole section;
-  then per chord: chord pattern choice (`getChordPattern`, `nextInt((int)sum)`,
-  `random <= weights`), one `nextInt(n)` per strike for the voicing pick (even
-  when n = 1), then bass pattern choice (`getPattern`, `random < weights`) and
-  bass rule draws (`nextInt` for C/S/A; one `nextDouble` per octave shift in
-  `placePitchNear`; one in `pressure` when outside the soft margin).
+  then per chord: chord pattern choice (`nextInt((int)sum)`, `random <=
+  weights`), one `nextInt(n)` per strike for the voicing pick (even when
+  n = 1), then bass pattern choice (`random < weights`) and bass rule draws
+  (`nextInt` for C/S/A; one `nextDouble` per octave step in `placePitchNear`;
+  one in `pressure` when outside the soft margin).
 - `findRise(root)` is negative for F, Bb, Eb, Ab, Db, Gb (flat preference), so
   spellings and voicings are transposed DOWN for those roots.
-- Vocabulary voicings are tried in REVERSE file order (`addVoicing` conses).
-  A chosen voicing is voicing + extension, unsorted; placement uses its first
-  note. `chooseVoicings` averages the leap in both directions.
+- Vocabulary voicings are tried in file order. A chosen voicing is voicing +
+  extension, unsorted; placement keys on its first note. The leap measure is
+  one-directional (the symmetric half is commented out in Java).
 - A rest in a chord pattern resets the "previous voicing" to empty.
 - Bass: notes start two octaves down, then `placePitchNear` (±11 of the last
   note) and `pressure`. Volume is a running value across the whole section.
@@ -111,5 +128,12 @@ Facts established from the Java source that the engine port must reproduce:
   of each pattern (chords, drums) or section (bass), then every unit's length
   becomes the gap to the next unit.
 - Chord patterns longer than the chord are split; the remainder carries over.
-- Channels in Java: melody 0, chords 3, bass 6, drums 9; all default
-  velocities are 127.
+
+**Reading the Java:** several live-looking blocks are inside `/* … */`
+(`chooseVoicings`, `placePitchNear`). Read the raw file; do not trust a
+comment-stripping grep.
+
+**Debugging a divergence:** copy `.build/classes` to a scratch dir, add a
+`System.err.println` to the scratch copy under `.build/javasrc`, recompile
+that one file into the copy, run one case with `GoldenDriver render`, then
+restore the source. Never regenerate goldens from a patched build.
