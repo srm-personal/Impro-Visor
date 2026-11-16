@@ -11,6 +11,7 @@
 		30F91A306B2C12FBA8C14D04 /* LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 73BFA6F982A5475E089D097F /* LICENSE.txt */; };
 		42EEBE5B92E278A3AA586888 /* leadsheets in Resources */ = {isa = PBXBuildFile; fileRef = 7D8EE8E2315A87000CE0062C /* leadsheets */; };
 		4F9863B905668E68BD374142 /* SmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60FA534D56C309D665D82DD3 /* SmokeTests.swift */; };
+		647971D044E15E03365CB2DF /* PracticeLoopTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE29EDD29BDD9676F7C4DAD7 /* PracticeLoopTests.swift */; };
 		77A84959B7032C47846992E8 /* styles in Resources */ = {isa = PBXBuildFile; fileRef = 4791C5499B7F21636C7A5CD5 /* styles */; };
 		805231FF5936607F1DDABF55 /* voicings in Resources */ = {isa = PBXBuildFile; fileRef = 762C029F22BBAB712924CDC7 /* voicings */; };
 		BA1CCFDECBA2CFB53251B494 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1CE26E28395895DE6440F2D3 /* Assets.xcassets */; };
@@ -49,6 +50,7 @@
 		7D8EE8E2315A87000CE0062C /* leadsheets */ = {isa = PBXFileReference; lastKnownFileType = folder; name = leadsheets; path = ../../leadsheets; sourceTree = SOURCE_ROOT; };
 		944FEB21EDB9A7D4251E88FA /* ImprovisorApp */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ImprovisorApp; path = ..; sourceTree = SOURCE_ROOT; };
 		CF1D32C2BC74055F35802FD6 /* grammars */ = {isa = PBXFileReference; lastKnownFileType = folder; name = grammars; path = ../../grammars; sourceTree = SOURCE_ROOT; };
+		DE29EDD29BDD9676F7C4DAD7 /* PracticeLoopTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PracticeLoopTests.swift; sourceTree = "<group>"; };
 		EE992526886FD6084557F023 /* vocab */ = {isa = PBXFileReference; lastKnownFileType = folder; name = vocab; path = ../../vocab; sourceTree = SOURCE_ROOT; };
 		EF2391D875DD8CA1781F2727 /* BundleCorpusTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundleCorpusTests.swift; sourceTree = "<group>"; };
 		FF457ED17465C9C454F67B0D /* LeadsheetStudioTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LeadsheetStudioTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -69,6 +71,7 @@
 		4006EBF5685B6FC4E89759C2 /* LeadsheetStudioUITests */ = {
 			isa = PBXGroup;
 			children = (
+				DE29EDD29BDD9676F7C4DAD7 /* PracticeLoopTests.swift */,
 				60FA534D56C309D665D82DD3 /* SmokeTests.swift */,
 			);
 			path = LeadsheetStudioUITests;
@@ -263,6 +266,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				647971D044E15E03365CB2DF /* PracticeLoopTests.swift in Sources */,
 				4F9863B905668E68BD374142 /* SmokeTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

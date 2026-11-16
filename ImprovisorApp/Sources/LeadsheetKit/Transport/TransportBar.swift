@@ -38,15 +38,16 @@ public struct TransportBar: View {
                 else { playback.play(score: score, from: editor.cursorSlot) }
             } label: { Image(systemName: "play.circle").frame(width: 18) }
                 .help("Play from the cursor, or loop the selection (Return)")
+                .accessibilityIdentifier("playFromCursor")
 
             Divider().frame(height: 20)
 
             Toggle(isOn: $playback.countIn) { Image(systemName: "metronome") }
-                .toggleStyle(.button).help("Two-bar count-in")
+                .toggleStyle(.button).help("Two-bar count-in").accessibilityIdentifier("countIn")
             Toggle(isOn: Binding(get: { playback.loopWholeForm }, set: { playback.loopWholeForm = $0; editor.loopEnabled = $0 })) {
                 Image(systemName: "repeat")
             }
-            .toggleStyle(.button).help("Loop the form (⌘L)")
+            .toggleStyle(.button).help("Loop the form (⌘L)").accessibilityIdentifier("loopForm")
 
             Divider().frame(height: 20)
 
@@ -57,6 +58,7 @@ public struct TransportBar: View {
                 .frame(width: 44).textFieldStyle(.roundedBorder).multilineTextAlignment(.trailing)
                 .onSubmit { if let v = Double(tempoText) { playback.tempo = max(30, min(300, v)) } }
                 .onChange(of: playback.tempo, initial: true) { _, t in tempoText = String(Int(t.rounded())) }
+                .accessibilityIdentifier("tempoField")
             Text("bpm").foregroundStyle(.secondary)
 
             Divider().frame(height: 20)

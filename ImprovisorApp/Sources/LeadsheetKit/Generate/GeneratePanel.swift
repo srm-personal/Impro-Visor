@@ -23,6 +23,7 @@ public struct GeneratePanel: View {
             Picker("Grammar", selection: $grammarName) {
                 ForEach(library.grammarNames, id: \.self) { Text($0).tag($0) }
             }
+            .accessibilityIdentifier("grammarPicker")
             HStack {
                 TextField("random seed", text: $seedText).textFieldStyle(.roundedBorder).frame(width: 110)
                 Text("blank = random").font(.caption).foregroundStyle(.secondary)
@@ -33,6 +34,7 @@ public struct GeneratePanel: View {
                     editor.generateSolo(grammar: g, seed: UInt64(seedText))
                 }
                 .keyboardShortcut("g", modifiers: [.command, .shift])
+                .accessibilityIdentifier("generateSolo")
                 Button("New Chorus") {
                     guard let g = library.grammar(grammarName) else { return }
                     editor.generateSoloChorus(grammar: g, seed: UInt64(seedText))

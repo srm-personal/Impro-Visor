@@ -54,6 +54,7 @@ public struct LeadsheetInspector: View {
                 Picker("Style", selection: styleBinding) {
                     ForEach(library.styleNames, id: \.self) { Text($0).tag($0) }
                 }
+                .accessibilityIdentifier("stylePicker")
                 Stepper(value: int(\.layout, "Change Layout", get: { $0.layout.first ?? 4 }, set: { $0.layout = [$1] }), in: 1...8) {
                     HStack { Text("Bars per line"); Spacer(); Text("\(score.layout.first ?? 4)").foregroundStyle(.secondary) }
                 }
