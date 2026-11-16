@@ -65,6 +65,11 @@ public struct Style: Equatable, Sendable {
     /// `(chord-base c- e- g-)`: the notional previous chord a `no-style`
     /// section voices its chords against.
     public var chordBase: [String] = ["c-", "e-", "g-"]
+    /// Bodies of the style's `(interpolate …)`, `(interpolable …)` and
+    /// `(substitute …)` entries, in file order (see ChordInterpolation.swift).
+    public var interpolations: [Polylist] = []
+    public var interpolables: [Polylist] = []
+    public var substitutions: [Polylist] = []
 
     /// Register bounds, as pitch-class/octave note names (e.g. `c`, `g--`, `d-`).
     public var bassHigh: String

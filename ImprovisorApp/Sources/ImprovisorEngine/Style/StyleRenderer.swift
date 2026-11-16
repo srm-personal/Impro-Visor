@@ -343,7 +343,14 @@ struct StyleRenderer {
     /// cut at a chord change, carried to the next chord of the section.
     private var residual: CompiledStyle.ChordPattern?
 
-    init(_ cs: CompiledStyle, bassChannel: UInt8, chordChannel: UInt8, applySwing: Bool = true) {
+    /// Passing-chord and substitution rules, when the style has any and a
+    /// vocabulary is available to build the new chords.
+    private let interpolator: ChordInterpolator?
+
+    init(_ cs: CompiledStyle, bassChannel: UInt8, chordChannel: UInt8, applySwing: Bool = true,
+         vocabulary: Vocabulary? = nil) {
+        let rules = InterpolationRules(style: cs.style)
+        self.interpolator = vocabulary.flatMap { rules.isEmpty ? nil : ChordInterpolator(rules: rules, vocabulary: $0) }
         self.cs = cs
         self.bassChannel = bassChannel
         self.chordChannel = chordChannel
@@ -443,10 +450,13 @@ struct StyleRenderer {
 
     /// Render slots `startIndex..<endIndex` of `chordPart` starting at `time`.
     /// Returns the time after the section.
-    mutating func render(chordPart: ChordPart, startIndex: Int, endIndex: Int, time startTime: Int,
+    mutating func render(chordPart original: ChordPart, startIndex: Int, endIndex: Int, time startTime: Int,
                          useDrums: Bool = true, rng: inout JavaRandom,
                          into out: inout SectionRender) -> Int {
         setResidual(nil)
+        // Java rewrites the whole progression (createInterpolatedChordPart)
+        // before the no-style check and before the drums.
+        let chordPart = interpolator?.apply(to: original, rng: &rng) ?? original
         var time = startTime
         let entries = chordPart.entries
         if cs.style.noStyle {

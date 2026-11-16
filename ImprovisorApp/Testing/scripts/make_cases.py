@@ -7,6 +7,7 @@ order within coverage buckets, so re-running gives the same file.
   styles  every shipped style on one blues and one 3/4 tune     290 cases
   own     the 50 tunes with their own styles/sections            50 cases
   seeds   5 tunes x 3 extra seeds in their own style             15 cases
+  interp  50 tunes x the 2 interpolating/substituting styles   100 cases
 """
 import os, re, sys
 
@@ -97,6 +98,12 @@ for i, t in enumerate(tunes):
 for i, t in enumerate(tunes[:50:10]):
     for seed in (1, 42, 123456789):
         cases.append((f"x{i:02d}_{slug(t['path'])}__seed{seed}", t["path"], "-", seed))
+
+# Passing-chord interpolation and substitution rewrite the progression, so
+# give the two styles that use them every tune rather than only two.
+for i, t in enumerate(tunes):
+    for s in ("swing-interpolate", "swing-substitute"):
+        cases.append((f"i{i:02d}_{slug(t['path'])}__{s}", t["path"], s, 3000 + i))
 
 ids = [c[0] for c in cases]
 assert len(ids) == len(set(ids)), "duplicate case ids"

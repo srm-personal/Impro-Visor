@@ -24,6 +24,8 @@ enum JavaPitch {
         return rise
     }
 
+    static func prefersSharps(_ pitchClass: PitchClass) -> Bool { sharpPreference.contains(pitchClass.name) }
+
     static func pc(_ midi: Int) -> Int { ((midi % 12) + 12) % 12 }
 
     /// `NoteSymbol.enharmonic`.

@@ -57,7 +57,8 @@ enum GoldenSupport {
             if let v = try? VoicingParser.parse(contentsOf: url) { voicings[url.lastPathComponent] = v }
         }
         var seen = Set<String>()
-        return StyleCatalog(styles: all.filter { seen.insert($0.name).inserted }, voicings: voicings)
+        return StyleCatalog(styles: all.filter { seen.insert($0.name).inserted }, voicings: voicings,
+                            vocabulary: vocabulary)
     }()
 
     static func cases() throws -> [GoldenCase] {
@@ -196,6 +197,7 @@ final class GoldenComparisonTests: XCTestCase {
         var report: [String] = []
 
         for c in cases {
+            if let only = ProcessInfo.processInfo.environment["IMPRO_ONLY"], c.id != only { continue }
             let (expected, _) = try GoldenSupport.golden(c.id)
             let (actual, score) = try GoldenSupport.render(c)
 

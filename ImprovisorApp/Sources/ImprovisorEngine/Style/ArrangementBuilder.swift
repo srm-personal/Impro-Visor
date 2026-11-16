@@ -16,16 +16,26 @@ import Foundation
 public protocol StyleProvider {
     func style(named name: String) -> Style?
     func voicingSettings(for style: Style) -> VoicingSettings
+    /// The chord vocabulary, needed by styles that insert passing chords or
+    /// substitutions. `nil` (the default) leaves those styles' progressions as
+    /// written.
+    var chordVocabulary: Vocabulary? { get }
+}
+
+public extension StyleProvider {
+    var chordVocabulary: Vocabulary? { nil }
 }
 
 /// A fixed set of styles, for tests and the CLI.
 public struct StyleCatalog: StyleProvider, Sendable {
     public var styles: [String: Style]
     public var voicings: [String: VoicingSettings]
+    public var chordVocabulary: Vocabulary?
 
-    public init(styles: [Style], voicings: [String: VoicingSettings] = [:]) {
+    public init(styles: [Style], voicings: [String: VoicingSettings] = [:], vocabulary: Vocabulary? = nil) {
         self.styles = Dictionary(uniqueKeysWithValues: styles.map { ($0.name, $0) })
         self.voicings = voicings
+        self.chordVocabulary = vocabulary
     }
 
     public func style(named name: String) -> Style? { styles[name] }
@@ -140,7 +150,8 @@ public enum ArrangementBuilder {
                 var renderer = StyleRenderer(compile(mostRecent.style, key: mostRecent.key),
                                              bassChannel: AccompanimentGenerator.bassChannel,
                                              chordChannel: AccompanimentGenerator.chordChannel,
-                                             applySwing: options.applySwing)
+                                             applySwing: options.applySwing,
+                                             vocabulary: styles.chordVocabulary)
                 var out = SectionRender()
                 chordTime = renderer.render(chordPart: chordPart, startIndex: record.index, endIndex: endIndex,
                                             time: chordTime, rng: &rng, into: &out)

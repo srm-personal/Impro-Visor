@@ -53,6 +53,8 @@ public struct ChordForm: Equatable, Sendable {
     /// The vocabulary's `CNote` form (a one-note "chord"), which chord
     /// patterns with degree rules `(X n dur)` voice. Filled in by `Vocabulary`.
     public internal(set) var noteForm: ChordFormBox?
+    /// `(substitute …)`: chord names a style may substitute for this chord.
+    public internal(set) var substitutions: [String] = []
 
     public init(name: String, family: String, spell: [PitchClass], color: [PitchClass],
                 priority: [PitchClass] = [], voicings: [Voicing] = [], scales: [ScaleReference] = [],
@@ -136,6 +138,7 @@ public final class Vocabulary: Sendable {
         var scales: [String: [PitchClass]] = [:]
         var scaleNotes: [String: [Int]] = [:]
         var scaleAliases: [String: String] = [:]
+        var substitutes: [String: [String]] = [:]
 
         for form in PolyaParser.parseAll(source) {
             guard case let .list(list) = form else { continue }
@@ -186,6 +189,7 @@ public final class Vocabulary: Sendable {
             let voicings = Vocabulary.voicings(list.assoc("voicings"))
             let family = list.assoc("family").flatMap { $0.secondOrNil()?.symbolValue } ?? "unknown"
             let scaleRefs = Vocabulary.scaleReferences(list.assoc("scales"))
+            substitutes[name] = list.assoc("substitute")?.rest().toArray().map(\.description) ?? []
             forms[name] = ChordForm(name: name, family: family, spell: spell, color: color,
                                     priority: priority, voicings: voicings, scales: scaleRefs,
                                     spellNotes: Vocabulary.midiNotes(list.assoc("spell")),
@@ -211,6 +215,7 @@ public final class Vocabulary: Sendable {
                 f.firstScaleSpell = (resolveScale(ref.type) ?? []).map { $0 + rise }
             }
             if name != "CNote" { f.noteForm = note }
+            f.substitutions = substitutes[name] ?? []
             forms[name] = f
         }
         self.forms = forms

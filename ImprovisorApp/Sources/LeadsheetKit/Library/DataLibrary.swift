@@ -14,6 +14,7 @@ import ImprovisorEngine
 public final class DataLibrary: StyleProvider, @unchecked Sendable {
     public let root: URL
     public let vocabulary: Vocabulary
+    public var chordVocabulary: Vocabulary? { vocabulary }
 
     private let lock = NSLock()
     private var styleCache: [String: Style] = [:]

@@ -50,6 +50,9 @@ public enum StyleParser {
         case "chord-high": style.chordHigh = rest.firstOrNil()?.description ?? style.chordHigh
         case "chord-low": style.chordLow = rest.firstOrNil()?.description ?? style.chordLow
         case "no-style": style.noStyle = true
+        case "interpolate": style.interpolations.append(entry)
+        case "interpolable": style.interpolables.append(entry)
+        case "substitute": style.substitutions.append(entry)
         case "chord-base": style.chordBase = rest.map(\.description)
         case "bass-pattern":
             if let p = parsePattern(entry) { style.bassPatterns.append(p) }
