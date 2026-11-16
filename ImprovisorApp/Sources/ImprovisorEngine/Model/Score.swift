@@ -151,6 +151,31 @@ public struct Score: Equatable, Sendable {
     /// The primary melody part, if any.
     public var melodyPart: MelodyPart? { melodyParts.first }
 
+    /// Make every part as long as the longest one, by lengthening each shorter
+    /// part's LAST unit (chord, note or rest). Port of Java `Score.checkLength`
+    /// → `Score.setLength` → `Part.setSize`, which the Java app applies to every
+    /// loaded score: a chord progression shorter than the melody keeps its last
+    /// chord sounding to the end, and vice versa.
+    public mutating func normalizeLength() {
+        let length = max(chordPart.size, melodyParts.map(\.size).max() ?? 0)
+        guard length > 0 else { return }
+        if chordPart.count > 0, chordPart.size < length {
+            chordPart.extendLast(by: length - chordPart.size)
+        }
+        for i in melodyParts.indices {
+            let size = melodyParts[i].size
+            guard size < length, let last = melodyParts[i].events.indices.last else { continue }
+            switch melodyParts[i].events[last] {
+            case var .note(n):
+                n.duration += length - size
+                melodyParts[i].events[last] = .note(n)
+            case var .rest(r):
+                r.duration += length - size
+                melodyParts[i].events[last] = .rest(r)
+            }
+        }
+    }
+
     /// A new, empty tune: `measures` bars of "no chord" and one melody chorus of
     /// rests, with a single section in `styleName`.
     public static func blank(measures: Int = 32, meter: Meter = .fourFour,

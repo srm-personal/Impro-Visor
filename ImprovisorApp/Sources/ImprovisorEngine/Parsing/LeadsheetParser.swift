@@ -31,15 +31,14 @@ public enum LeadsheetParser {
     public static func parse(_ content: String, vocabulary: Vocabulary) -> Score {
         var score = Score()
         var chordStream: [ChordToken] = []
-        var melodyBuckets: [MelodyBucket] = []
+        // Java starts with ONE melody part and one chord part that exist
+        // before any `(part …)` header is read; headers only configure them.
+        var melodyBuckets: [MelodyBucket] = [MelodyBucket(info: .defaultMelody)]
         var chordInfo = PartInfo.defaultChords
         var seenStyle = false
         var rise = 0
-
-        func currentBucket() -> Int {
-            if melodyBuckets.isEmpty { melodyBuckets.append(MelodyBucket(info: .defaultMelody)) }
-            return melodyBuckets.count - 1
-        }
+        // Java `headStarted`: set by the first bare token (chord, bar or note).
+        var headStarted = false
 
         for form in PolyaParser.parseAll(content) {
             switch form {
@@ -99,14 +98,22 @@ public enum LeadsheetParser {
                     let style = rest.assoc("style")?.secondOrNil()?.symbolValue ?? ""
                     chordStream.append(.marker(SectionMarker(styleName: style, isPhrase: head == "phrase")))
                 case "part":
-                    let (type, info) = parsePart(rest)
-                    switch type {
+                    switch partType(rest) {
                     case "chords":
+                        var info = PartInfo.defaultChords
+                        applyPart(rest, to: &info)
                         chordInfo = info
                     case "melody":
-                        var melodyInfo = info
-                        if rest.assoc("stave") == nil { melodyInfo.stave = .treble }
-                        melodyBuckets.append(MelodyBucket(info: melodyInfo))
+                        // Java (Leadsheet.readLeadSheet, case TYPE): a NEW part
+                        // is started only if the head has started and the
+                        // current part already has notes; otherwise the header
+                        // re-configures the current (still empty) part.
+                        if headStarted && !melodyBuckets[melodyBuckets.count - 1].tokens.isEmpty {
+                            melodyBuckets.append(MelodyBucket(info: .defaultMelody))
+                        }
+                        var info = PartInfo.defaultMelody
+                        applyPart(rest, to: &info)
+                        melodyBuckets[melodyBuckets.count - 1].info = info
                     default:
                         break
                     }
@@ -116,13 +123,14 @@ public enum LeadsheetParser {
 
             case let .symbol(token):
                 guard let first = token.first else { continue }
+                headStarted = true
                 if first == "|" || first == "," {
                     chordStream.append(.bar)
                 } else if first == "/" {
                     chordStream.append(.slash)
                 } else if first.isLetter {
                     if first.isLowercase {
-                        melodyBuckets[currentBucket()].tokens.append(token)
+                        melodyBuckets[melodyBuckets.count - 1].tokens.append(token)
                     } else if ChordSymbol.isRecognized(token, vocabulary: vocabulary) {
                         chordStream.append(.chord(token))
                     }
@@ -155,6 +163,12 @@ public enum LeadsheetParser {
         score.melodyParts = melodyBuckets.map { bucket in
             MelodyPart(events: parseMelodyTokens(bucket.tokens, rise: rise), info: bucket.info)
         }
+        // Java: if the last melody part is empty it gets a one-beat rest
+        // (Leadsheet.readLeadSheet tail), so a tune always has a melody part.
+        if let last = score.melodyParts.indices.last, score.melodyParts[last].events.isEmpty {
+            score.melodyParts[last].events = [.rest(Rest(duration: Constants.BEAT))]
+        }
+        score.normalizeLength()
         return score
     }
 
@@ -198,15 +212,18 @@ public enum LeadsheetParser {
         var tokens: [String] = []
     }
 
-    /// `(part (type X) (title …) (composer …) (instrument n) (volume n) (key k) (stave s))`
-    private static func parsePart(_ items: Polylist) -> (type: String, info: PartInfo) {
-        var info = PartInfo()
-        var type = ""
+    /// The `(type X)` of a `(part …)` header, or "" if absent.
+    private static func partType(_ items: Polylist) -> String {
+        items.assoc("type")?.secondOrNil()?.symbolValue ?? ""
+    }
+
+    /// Apply the fields present in a `(part (title …) (composer …) (instrument n)
+    /// (volume n) (key k) (stave s))` header to `info`.
+    private static func applyPart(_ items: Polylist, to info: inout PartInfo) {
         for item in items {
             guard case let .list(sub) = item, case let .symbol(key) = sub.firstOrNil() else { continue }
             let value = sub.rest()
             switch key {
-            case "type": type = value.firstOrNil()?.symbolValue ?? ""
             case "title": info.title = concatElements(value)
             case "composer": info.composer = concatElements(value)
             case "instrument": if let v = value.firstOrNil()?.intValue { info.instrument = v }
@@ -219,11 +236,6 @@ public enum LeadsheetParser {
             default: break
             }
         }
-        if type == "chords" && items.assoc("instrument") == nil { info.instrument = PartInfo.defaultChords.instrument }
-        if type == "chords" && items.assoc("volume") == nil { info.volume = PartInfo.defaultChords.volume }
-        if type == "melody" && items.assoc("instrument") == nil { info.instrument = PartInfo.defaultMelody.instrument }
-        if type == "melody" && items.assoc("volume") == nil { info.volume = PartInfo.defaultMelody.volume }
-        return (type, info)
     }
 
     /// Melody tokens → events. Handles `vNN` volume tokens (Java VolumeSymbol)
