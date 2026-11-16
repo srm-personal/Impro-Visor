@@ -125,15 +125,6 @@ final class CorpusSweepTests: XCTestCase {
 
     // MARK: Styles vs Java
 
-    /// Total slot duration of a rule list the way Java's Pattern.getDuration
-    /// computes it: every rule's duration string except volume (`V`) rules.
-    static func duration(of rules: [String]) -> Int {
-        rules.reduce(0) { sum, token in
-            guard let c = token.first, c != "V" else { return sum }
-            return sum + Duration.slots(String(token.dropFirst()))
-        }
-    }
-
     func testStyleCountsMatchJava() throws {
         let golden = try Self.goldenLines("style-counts.tsv")
         XCTAssertGreaterThan(golden.count, 100)
@@ -151,6 +142,7 @@ final class CorpusSweepTests: XCTestCase {
                 continue
             }
             func fmt(_ d: Double) -> String { Self.javaDouble(d) }
+            let compiled = CompiledStyle(style)
             let mine: [(String, String)] = [
                 ("bassPatternCount", "\(style.bassPatterns.count)"),
                 ("chordPatternCount", "\(style.chordPatterns.count)"),
@@ -162,13 +154,14 @@ final class CorpusSweepTests: XCTestCase {
                 ("bassHigh", "\(Register.midi(ofNoteName: style.bassHigh, fallback: -1))"),
                 ("chordLow", "\(Register.midi(ofNoteName: style.chordLow, fallback: -1))"),
                 ("chordHigh", "\(Register.midi(ofNoteName: style.chordHigh, fallback: -1))"),
-                ("bassPatternDurations", style.bassPatterns.map {
-                    "\(Self.duration(of: $0.rules)):\(Self.javaDouble($0.weight))" }.joined(separator: " ")),
-                ("chordPatternDurations", style.chordPatterns.map {
-                    "\(Self.duration(of: $0.rules)):\(Self.javaDouble($0.weight))" }.joined(separator: " ")),
-                ("drumPatternDurations", style.drumPatterns.map { p in
-                    "\(p.voices.map { Self.duration(of: $0.hits) }.max() ?? 0):\(Self.javaDouble(p.weight))" }
-                    .joined(separator: " ")),
+                // Durations as the ENGINE computes them (CompiledStyle), which is
+                // what pattern selection uses — compared with Java's getDuration().
+                ("bassPatternDurations", compiled.bass.map {
+                    "\($0.duration):\(Self.javaDouble($0.weight))" }.joined(separator: " ")),
+                ("chordPatternDurations", compiled.chord.map {
+                    "\($0.duration):\(Self.javaDouble($0.weight))" }.joined(separator: " ")),
+                ("drumPatternDurations", compiled.drums.map {
+                    "\($0.duration):\(Self.javaDouble($0.weight))" }.joined(separator: " ")),
             ]
             var first: String?
             for (i, (field, value)) in mine.enumerated() {

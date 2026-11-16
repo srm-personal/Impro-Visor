@@ -70,15 +70,26 @@ public struct AccompanimentGenerator {
         self.chordHigh = Register.midi(ofNoteName: style.chordHigh, fallback: 72)
     }
 
-    /// Generate accompaniment for a chord progression. `seed` makes the
-    /// (otherwise random) pattern/tone choices reproducible.
+    /// Generate accompaniment for a chord progression in this one style.
+    /// `seed` makes the (otherwise random) pattern/tone choices reproducible;
+    /// it seeds a `JavaRandom`, so the result equals what the Java original
+    /// produces for the same progression, style and seed. Positions are
+    /// straight (no swing); `ArrangementBuilder` renders with swing.
     public func generate(chordPart: ChordPart, seed: UInt64 = 0) -> Accompaniment {
-        var rng = SeededGenerator(seed: seed)
-        let bass = generateBass(chordPart, &rng)
-        let chords = generateChords(chordPart, &rng)
-        let drums = generateDrums(totalSlots: chordPart.size, &rng)
-        return Accompaniment(bass: bass, chords: chords, drums: drums)
+        var rng = JavaRandom(seed: Int64(bitPattern: seed))
+        var renderer = StyleRenderer(CompiledStyle(style), bassChannel: Self.bassChannel,
+                                     chordChannel: Self.chordChannel, applySwing: false)
+        var out = SectionRender()
+        _ = renderer.render(chordPart: chordPart, startIndex: 0, endIndex: chordPart.size, time: 0,
+                            rng: &rng, into: &out)
+        return Accompaniment(bass: out.bass, chords: out.chords, drums: out.drums)
     }
+
+    // MARK: - Superseded generators
+    //
+    // The code below is the port's first, approximate implementation. It is no
+    // longer called; StyleRenderer replaces it. Kept until the custom-voicing
+    // path (VoicingGenerator) is ported to the Java-compatible stream.
 
     // MARK: Bass
 

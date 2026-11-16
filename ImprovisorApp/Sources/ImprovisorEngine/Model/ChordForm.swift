@@ -46,6 +46,13 @@ public struct ChordForm: Equatable, Sendable {
     public let spellNotes: [Int]
     public let priorityNotes: [Int]
     public let colorNotes: [Int]
+    /// The first-listed scale spelled from its own tonic (Java
+    /// `Advisor.getScale(type).getSpell(tonic)`), as absolute MIDI notes;
+    /// `nil` when the form lists no scales. Filled in by `Vocabulary`.
+    public internal(set) var firstScaleSpell: [Int]?
+    /// The vocabulary's `CNote` form (a one-note "chord"), which chord
+    /// patterns with degree rules `(X n dur)` voice. Filled in by `Vocabulary`.
+    public internal(set) var noteForm: ChordFormBox?
 
     public init(name: String, family: String, spell: [PitchClass], color: [PitchClass],
                 priority: [PitchClass] = [], voicings: [Voicing] = [], scales: [ScaleReference] = [],
@@ -88,6 +95,13 @@ public struct ChordForm: Equatable, Sendable {
         guard let ref = scales.first else { return [] }
         return vocabulary.scaleTones(ref, chordRoot: root)
     }
+}
+
+/// A reference to a chord form, so a form can point at another one.
+public final class ChordFormBox: Equatable, Sendable {
+    public let form: ChordForm
+    public init(_ form: ChordForm) { self.form = form }
+    public static func == (a: ChordFormBox, b: ChordFormBox) -> Bool { a.form.name == b.form.name }
 }
 
 /// A scale named in a chord form's `(scales …)` list: `(G major pentatonic)`
@@ -179,6 +193,26 @@ public final class Vocabulary: Sendable {
                                     colorNotes: Vocabulary.midiNotes(list.assoc("color")))
         }
 
+        // Second pass: resolve each form's first scale and the note form.
+        func resolveScale(_ type: String) -> [Int]? {
+            var current = type
+            for _ in 0..<20 {
+                if let notes = scaleNotes[current] { return notes }
+                guard let next = scaleAliases[current] else { return nil }
+                current = next
+            }
+            return nil
+        }
+        let note = forms["CNote"].map(ChordFormBox.init)
+        for (name, form) in forms {
+            var f = form
+            if let ref = f.scales.first {
+                let rise = JavaPitch.rise(ref.root)
+                f.firstScaleSpell = (resolveScale(ref.type) ?? []).map { $0 + rise }
+            }
+            if name != "CNote" { f.noteForm = note }
+            forms[name] = f
+        }
         self.forms = forms
         self.aliases = aliases
         self.scales = scales

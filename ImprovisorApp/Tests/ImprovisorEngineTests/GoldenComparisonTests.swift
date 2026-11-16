@@ -212,6 +212,12 @@ final class GoldenComparisonTests: XCTestCase {
 
             if let d = GoldenSupport.firstDivergence(expected: expected, actual: actual, score: score) {
                 groups["\(d.role): \(d.kind)", default: []].append(c.id)
+                // Swift's full event list, for diffing against the golden by hand.
+                let dir = TestData.url("ImprovisorApp/Testing/.build/reports/swift-events")
+                try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+                try? actual.map { "\($0.channel) \($0.tick) \($0.pitch) \($0.velocity) \($0.duration)" }
+                    .joined(separator: "\n")
+                    .write(to: dir.appendingPathComponent("\(c.id).events.txt"), atomically: true, encoding: .utf8)
                 report.append("=== \(c.id)  (\(c.leadsheet), style \(c.style), seed \(c.seed))\n\(d.message)\n")
             } else {
                 passed += 1

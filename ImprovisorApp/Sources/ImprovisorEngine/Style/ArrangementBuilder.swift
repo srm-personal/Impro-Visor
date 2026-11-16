@@ -92,53 +92,63 @@ public enum ArrangementBuilder {
             return s
         }
 
-        // Section spans in slots, in order.
-        var spans: [(range: Range<Int>, style: Style)] = []
-        if chordPart.size > 0 {
-            let records = score.sections.records.isEmpty
-                ? [SectionRecord(measure: 0, styleName: score.styleName)]
-                : score.sections.records
-            var current = score.styleName
-            for (i, record) in records.enumerated() {
-                if !record.styleName.isEmpty { current = record.styleName }
-                let start = min(record.measure * slotsPerBar, chordPart.size)
-                let end = i + 1 < records.count
-                    ? min(records[i + 1].measure * slotsPerBar, chordPart.size)
-                    : chordPart.size
-                if end > start { spans.append((start..<end, resolve(current))) }
-            }
-            if spans.isEmpty { spans.append((0..<chordPart.size, baseStyle)) }
-            if let first = spans.first, first.range.lowerBound > 0 {
-                spans.insert((0..<first.range.lowerBound, baseStyle), at: 0)
-            }
+        // Sections as Java's SectionInfo sees them: (start slot, style or nil
+        // for "use the previous style").
+        var records: [(index: Int, styleName: String?)] = score.sections.records.map {
+            ($0.measure * slotsPerBar, $0.usesPreviousStyle ? nil : $0.styleName)
         }
+        if records.isEmpty { records = [(0, score.styleName)] }
+
+        var compiled: [String: CompiledStyle] = [:]
+        func compile(_ style: Style, key: String) -> CompiledStyle {
+            if let c = compiled[key] { return c }
+            let c = CompiledStyle(style)
+            compiled[key] = c
+            return c
+        }
+        // Java starts SectionInfo.render with `new Style()`: a style with no
+        // patterns, which is what a leading "use previous style" section gets.
+        let emptyStyle = Style(name: "", voicingType: "closed")
 
         var bass: [ScheduledNote] = [], comping: [ScheduledNote] = []
         var drums: [ScheduledNote] = [], melody: [ScheduledNote] = []
 
+        // ONE random stream for the whole render, consumed in Java's order.
+        var rng = JavaRandom(seed: options.javaSeed ?? Int64(bitPattern: options.seed))
+        var time = 0
+
+        // Port of Score.render: each chorus renders a melody part and, in
+        // parallel, the whole chord progression section by section.
         for chorus in 0..<choruses {
-            let chorusOffset = chorus * formSlots
-            for (index, span) in spans.enumerated() {
-                let style = span.style
-                let generator = AccompanimentGenerator(style: style,
-                                                       voicingSettings: styles.voicingSettings(for: style))
-                let seed = options.seed &+ UInt64(chorus) &* 1_000_003 &+ UInt64(index) &* 7919
-                let acc = generator.generate(chordPart: chordPart.slice(span.range), seed: seed)
-                let swing = options.applySwing ? style.compSwing : 0.5
-                let offset = chorusOffset + span.range.lowerBound
-                if options.includeBass { bass += shift(Groove.swung(acc.bass, swing: swing), by: offset) }
-                if options.includeChords { comping += shift(Groove.swung(acc.chords, swing: swing), by: offset) }
-                if options.includeDrums { drums += shift(Groove.swung(acc.drums, swing: swing), by: offset) }
+            let chorusStart = time
+            var melodyEnd = chorusStart
+            if !score.melodyParts.isEmpty {
+                let part = score.melodyParts[chorus % score.melodyParts.count]
+                melodyEnd = chorusStart + part.size
+                if options.includeMelody {
+                    melody += melodyNotes(part, score: score, records: records, resolve: resolve,
+                                          applySwing: options.applySwing, from: chorusStart,
+                                          channel: options.melodyChannel)
+                }
             }
 
-            if options.includeMelody, !score.melodyParts.isEmpty {
-                let part = score.melodyParts[chorus % score.melodyParts.count]
-                var notes = scheduled(part, channel: options.melodyChannel)
-                if options.applySwing {
-                    notes = swingBySection(notes, spans: spans, defaultSwing: baseStyle.swing)
-                }
-                melody += shift(notes, by: chorusOffset)
+            var chordTime = chorusStart
+            var mostRecent = (style: emptyStyle, key: "\u{0}empty")
+            for (i, record) in records.enumerated() {
+                if let name = record.styleName { mostRecent = (resolve(name), name) }
+                let endIndex = i + 1 < records.count ? records[i + 1].index : chordPart.size
+                var renderer = StyleRenderer(compile(mostRecent.style, key: mostRecent.key),
+                                             bassChannel: AccompanimentGenerator.bassChannel,
+                                             chordChannel: AccompanimentGenerator.chordChannel,
+                                             applySwing: options.applySwing)
+                var out = SectionRender()
+                chordTime = renderer.render(chordPart: chordPart, startIndex: record.index, endIndex: endIndex,
+                                            time: chordTime, rng: &rng, into: &out)
+                if options.includeBass { bass += out.bass }
+                if options.includeChords { comping += out.chords }
+                if options.includeDrums { drums += out.drums }
             }
+            time = max(melodyEnd, chordTime)
         }
 
         var tracks: [MIDITrack] = []
@@ -186,19 +196,33 @@ public enum ArrangementBuilder {
         delta == 0 ? notes : notes.map { var n = $0; n.startTick += delta; return n }
     }
 
-    /// Swing melody notes with the swing ratio of the section each note starts in.
-    static func swingBySection(_ notes: [ScheduledNote], spans: [(range: Range<Int>, style: Style)],
-                               defaultSwing: Double) -> [ScheduledNote] {
-        guard !spans.isEmpty else { return Groove.swung(notes, swing: defaultSwing) }
-        var out: [ScheduledNote] = []
-        var covered = 0
-        for span in spans {
-            let inSpan = notes.filter { span.range.contains($0.startTick) }
-            out += Groove.swung(inSpan, swing: span.style.swing)
-            covered = max(covered, span.range.upperBound)
+    /// A melody chorus as scheduled notes, swung the way Java's
+    /// `Score.makeSwing` → `Part.makeSwing(SectionInfo)` does it: beat by beat,
+    /// with the swing of the style in force at that beat.
+    static func melodyNotes(_ part: MelodyPart, score: Score,
+                            records: [(index: Int, styleName: String?)],
+                            resolve: (String) -> Style, applySwing: Bool,
+                            from start: Int, channel: UInt8) -> [ScheduledNote] {
+        var slots = SlotPart()
+        for event in part.events {
+            switch event {
+            case let .note(n): slots.add(pitch: n.pitch, duration: n.duration, volume: max(0, min(127, n.volume)))
+            case let .rest(r): slots.add(pitch: nil, duration: r.duration)
+            }
         }
-        let tail = notes.filter { $0.startTick >= covered }
-        out += Groove.swung(tail, swing: defaultSwing)
-        return out.sorted { $0.startTick < $1.startTick }
+        if applySwing {
+            // Java: `previousStyle` starts as the style named "swing".
+            var previous = resolve("swing").swing
+            // Java swings a COPY of the score, and MelodyPart.copy does not
+            // carry the metre over, so the beat is always a quarter note here
+            // — also in 6/8, 12/8 and 2/2 (Java quirk Q-02).
+            slots.makeSwing(beatValue: Constants.BEAT) { slot in
+                // SectionInfo.getSectionRecordBySlot: the last record at or before the slot.
+                let record = records.last { $0.index <= slot } ?? records[0]
+                if let name = record.styleName { previous = resolve(name).swing }
+                return previous
+            }
+        }
+        return slots.render(from: start, channel: channel).notes
     }
 }

@@ -60,6 +60,11 @@ public struct Style: Equatable, Sendable {
     /// Name of the `.fv` preset in `voicings/` used by the algorithmic voicer when
     /// `voicingType == "custom"`. Defaults to `default.fv`.
     public var voicingFileName: String
+    /// `(no-style)`: chords are sounded plainly, with no patterns or drums.
+    public var noStyle = false
+    /// `(chord-base c- e- g-)`: the notional previous chord a `no-style`
+    /// section voices its chords against.
+    public var chordBase: [String] = ["c-", "e-", "g-"]
 
     /// Register bounds, as pitch-class/octave note names (e.g. `c`, `g--`, `d-`).
     public var bassHigh: String
@@ -78,11 +83,11 @@ public struct Style: Equatable, Sendable {
         compSwing: Double = 0.5,
         voicingType: String = "closed",
         voicingFileName: String = "default.fv",
-        bassHigh: String = "c",
-        bassLow: String = "g--",
+        bassHigh: String = "g-",
+        bassLow: String = "g---",
         bassBase: String = "e--",
         chordHigh: String = "a",
-        chordLow: String = "d-",
+        chordLow: String = "c-",
         bassPatterns: [Pattern] = [],
         chordPatterns: [Pattern] = [],
         drumPatterns: [DrumPattern] = []
