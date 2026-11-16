@@ -331,6 +331,11 @@ static void render(String casesFile, String outDir) throws Exception
         score.getChordProg().setStyle(style);
         }
       Rng.seed(seed);
+      // Exactly what the app does for Play (PlayScoreCommand:300-323) and for
+      // MIDI export (ExportToMidiCommand:115-121): swing a COPY of the score,
+      // then render it.
+      score = score.copy();
+      score.makeSwing();
       Sequence seq = score.render(PPQN, Transposition.none);
       List<String> messages = ErrorLog.drain();
       writeEvents(new File(outDir, id + ".events.txt"), id, path, style, seed, score, seq, messages);

@@ -16,7 +16,7 @@
 # program 9 51
 # endTick 80640
 # columns: channel tick pitch velocity duration
-0 0 79 127 720
+0 0 79 127 744
 3 0 50 127 720
 3 0 52 127 720
 3 0 55 127 720
