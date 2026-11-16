@@ -19,3 +19,4 @@ Java references are `src/…:line` in this repository.
 
 | ID | Subsystem | Symptom | Root cause | Java reference | Swift fix | Status |
 |----|-----------|---------|------------|----------------|-----------|--------|
+| B-001 | Parsing / Polya | 7 CRLF leadsheets lose the first chord of every line (e.g. `AreYouReal.ls`: 30 chords instead of 39, form 480 slots short). | `Tokenizer` scanned Swift `Character`s; `"\r\n"` is a single grapheme that matched neither `\r` nor `\n`, so it glued onto the next word and the token was dropped. | `src/polya/Tokenizer.java:100` (whitespace = space, tab, `\n`, `\r`, `\f`, read per char) | `Polya/Tokenizer.swift` — scan Unicode scalars | fixed |

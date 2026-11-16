@@ -39,7 +39,10 @@ public struct Tokenizer {
     private let scalars: [Character]
 
     public init(_ input: String) {
-        self.scalars = Array(input)
+        // Scan Unicode scalars, not grapheme clusters: Swift folds "\r\n" into
+        // ONE Character that is neither "\r" nor "\n", so CRLF files lost the
+        // token following every line break. Java's tokenizer reads chars.
+        self.scalars = input.unicodeScalars.map(Character.init)
     }
 
     /// Characters that terminate a word and are single-character tokens.
