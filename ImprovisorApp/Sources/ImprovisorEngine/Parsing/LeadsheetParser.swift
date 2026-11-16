@@ -123,9 +123,14 @@ public enum LeadsheetParser {
                 } else if first.isLetter {
                     if first.isLowercase {
                         melodyBuckets[currentBucket()].tokens.append(token)
-                    } else {
+                    } else if ChordSymbol.isRecognized(token, vocabulary: vocabulary) {
                         chordStream.append(.chord(token))
                     }
+                    // else: Java (Leadsheet.readLeadSheet → makeChordSymbol ==
+                    // null) reports "does not recognize this chord … using NC
+                    // instead" but in fact DROPS the token: it never enters the
+                    // chord stream, so the bar is divided among the remaining
+                    // cells. Matched as-is (Java quirk Q-01).
                 }
 
             default:

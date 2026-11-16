@@ -51,6 +51,19 @@ public struct ChordSymbol: Equatable, Sendable {
 
     // MARK: Parsing
 
+    /// Whether Java's `ChordSymbol.makeChordSymbol` would accept `name`: it has
+    /// a valid root, its type is a chord form in the vocabulary, and (for a
+    /// polychord `X\\Y`) so is its base. `NC` is always accepted.
+    public static func isRecognized(_ name: String, vocabulary: Vocabulary) -> Bool {
+        guard let symbol = parse(name, vocabulary: vocabulary) else { return false }
+        if symbol.isNoChord { return true }
+        guard symbol.form != nil else { return false }
+        if let slash = name.firstIndex(where: { $0 == "/" || $0 == "\\" }), name[slash] == "\\" {
+            return isRecognized(String(name[name.index(after: slash)...]), vocabulary: vocabulary)
+        }
+        return true
+    }
+
     /// Parse a chord name using `vocabulary` to resolve its type. Returns `nil`
     /// if the name has no valid root (mirrors `makeChordSymbol` returning null).
     /// Unknown *types* still parse — `form` is simply `nil`.
