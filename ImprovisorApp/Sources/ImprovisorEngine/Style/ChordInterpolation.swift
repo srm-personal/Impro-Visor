@@ -234,9 +234,6 @@ struct ChordInterpolator {
         // substituteChords + extractSub.
         progression = substitute(progression[...], &rng)
 
-        if ProcessInfo.processInfo.environment["IMPRO_TRACE"] != nil {
-            FileHandle.standardError.write(("POST " + progression.map { "\($0.name)/\($0.rhythmValue)" }.joined(separator: " ") + "\n").data(using: .utf8)!)
-        }
         var out = ChordPart(info: part.info)
         let noChord = ChordSymbol.parse(ChordSymbol.noChordName, vocabulary: vocabulary)!
         for c in progression where c.rhythmValue > 0 {

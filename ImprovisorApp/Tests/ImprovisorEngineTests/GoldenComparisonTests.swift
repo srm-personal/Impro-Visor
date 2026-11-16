@@ -197,6 +197,7 @@ final class GoldenComparisonTests: XCTestCase {
         var report: [String] = []
 
         for c in cases {
+            // Debugging aid: IMPRO_ONLY=<case id> renders just that case.
             if let only = ProcessInfo.processInfo.environment["IMPRO_ONLY"], c.id != only { continue }
             let (expected, _) = try GoldenSupport.golden(c.id)
             let (actual, score) = try GoldenSupport.render(c)

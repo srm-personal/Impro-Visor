@@ -89,15 +89,16 @@ reports to `Testing/.build/reports`.
 | Leadsheets matching Java's parse (3,280) | 3,241 | 3,280 |
 | Leadsheet load → save → reload stable | 3,280 | 3,280 |
 | Styles matching Java's patterns (145) | 50 | 145 |
-| Golden accompaniment cases identical (855) | 0 | 851 |
-| — bass / chords / drums / melody tracks | 0 / 1 / 2 / 420 | 846 / 851 / 840 / 427 |
+| Golden accompaniment cases identical (955; was 855) | 0 | 954 |
+| — bass / chords / drums / melody tracks | 0 / 1 / 2 / 420 | 949/950 · 954/955 · 943/944 · 502/503 |
 
 Run everything: `cd ImprovisorApp && swift test` (≈45 s). The one failing
-test is `GoldenComparisonTests` (4 cases, BUG_LOG O-03). Reports land in
+test is `GoldenComparisonTests`: 1 case, where Java itself throws (BUG_LOG Q-04).
+`IMPRO_ONLY=<case id> swift test --filter GoldenComparisonTests` renders one case. Reports land in
 `Testing/.build/reports/` (`golden-diff.txt`, `swift-events/<case>.events.txt`
 to diff against `goldens/accompaniment/<case>.events.txt`).
 
-Open: O-03 interpolation/substitution (2 styles), O-06 solo goldens (blocked
+Open: Q-04 (decision), O-06 solo goldens (blocked
 on `Notate`), O-04 custom voicing, O-05 channel numbers, O-07 playback
 transposition. UI tests: `scripts/uitest.sh` — only the open-tune test was
 verified in the agent session.
@@ -106,7 +107,9 @@ verified in the agent session.
 
 `Style/StyleRenderer.swift` is the port of `Style.render` and the pattern
 classes; `ArrangementBuilder` is `Score.render` + `SectionInfo.render`;
-`Util/JavaRandom.swift` is the stream. Facts worth knowing before touching it:
+`Style/ChordInterpolation.swift` is `createInterpolatedChordPart` (passing
+chords, substitutions); `Util/JavaRandom.swift` is the stream. What to do next
+is in `NEXT_STEPS.md`. Facts worth knowing before touching it:
 
 - One RNG stream. Per section, in order: drum patterns for the whole section;
   then per chord: chord pattern choice (`nextInt((int)sum)`, `random <=
