@@ -225,10 +225,10 @@ public final class Transport: @unchecked Sendable {
         }
     }
 
-    /// Freeze position. Does not silence the backend — any currently-sounding
-    /// notes keep ringing (their note-offs simply won't arrive until resumed).
+    /// Freeze position and silence the backend, so a note that was sounding
+    /// does not ring on while paused.
     public func pause() {
-        defer { backend.allNotesOff() }   // a paused note must not keep ringing
+        defer { backend.allNotesOff() }
         var notify = false
         lock.lock()
         if _state == .playing || _state == .countingIn {
