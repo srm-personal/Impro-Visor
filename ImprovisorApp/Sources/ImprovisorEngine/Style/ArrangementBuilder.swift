@@ -38,6 +38,10 @@ public struct ArrangementOptions: Equatable, Sendable {
     /// How many times the form is played.
     public var choruses: Int = 1
     public var seed: UInt64 = 0
+    /// Seed for the Java-compatible random stream (`JavaRandom`). When set it
+    /// takes precedence over `seed`; the differential tests use it to
+    /// reproduce the Java engine's output exactly.
+    public var javaSeed: Int64?
     public var includeBass = true
     public var includeChords = true
     public var includeDrums = true
