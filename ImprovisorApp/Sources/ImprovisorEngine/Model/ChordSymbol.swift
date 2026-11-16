@@ -86,8 +86,16 @@ public struct ChordSymbol: Equatable, Sendable {
         var bass = root
         if index < len {
             if chars[index] == "/" {
-                let bassString = String(chars[(index + 1)...])
-                guard let b = PitchClass.named(bassString.lowercased()) else { return nil }
+                // Java's PitchClass.getPitchClass looks only at the letter and
+                // an optional following `b`/`#`, ignoring the rest — so
+                // `Fm7/Bb7` is Fm7 over Bb and `Eb7/B6` is Eb7 over B.
+                let bassChars = Array(chars[(index + 1)...]).map { Character($0.lowercased()) }
+                guard let letter = bassChars.first, PitchClass.isValidPitchStart(letter) else { return nil }
+                var bassString = String(letter)
+                if bassChars.count > 1, bassChars[1] == "b" || bassChars[1] == "#" {
+                    bassString.append(bassChars[1])
+                }
+                guard let b = PitchClass.named(bassString) else { return nil }
                 bass = b
             } else {
                 // Polychord: bass comes from the upper structure's root.
