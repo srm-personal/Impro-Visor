@@ -21,6 +21,8 @@ public final class CoreMIDIBackend: InstrumentBackend {
     private var port = MIDIPortRef()
     private let destination: MIDIEndpointRef
     public let destinationName: String
+    private let lock = NSLock()
+    private var sounding = SoundingNotes()
 
     /// Target the destination whose name contains `hint` (case-insensitive), or
     /// the first available if `hint` is nil. Returns nil if none match.
@@ -48,12 +50,16 @@ public final class CoreMIDIBackend: InstrumentBackend {
         send([0xC0 | (channel & 0x0F), program & 0x7F])
     }
     public func noteOn(_ pitch: UInt8, velocity: UInt8, channel: UInt8) {
+        lock.lock(); sounding.noteOn(pitch, channel: channel); lock.unlock()
         send([0x90 | (channel & 0x0F), pitch & 0x7F, velocity & 0x7F])
     }
     public func noteOff(_ pitch: UInt8, channel: UInt8) {
+        lock.lock(); sounding.noteOff(pitch, channel: channel); lock.unlock()
         send([0x80 | (channel & 0x0F), pitch & 0x7F, 0])
     }
     public func allNotesOff() {
+        lock.lock(); let notes = sounding.drain(); lock.unlock()
+        for n in notes { send([0x80 | (n.channel & 0x0F), n.pitch & 0x7F, 0]) }
         for channel in 0..<16 {
             send([0xB0 | UInt8(channel), 123, 0])
             send([0xB0 | UInt8(channel), 120, 0])

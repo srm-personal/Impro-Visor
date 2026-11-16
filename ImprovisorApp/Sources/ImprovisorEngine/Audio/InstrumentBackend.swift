@@ -30,6 +30,27 @@ public protocol InstrumentBackend: AnyObject {
     func allNotesOff()
 }
 
+/// Tracks which notes are sounding so a backend can silence them explicitly
+/// (synths differ in how they honor the "all notes off" controller).
+public struct SoundingNotes: Sendable {
+    private var notes: Set<UInt16> = []
+    public init() {}
+
+    private static func key(_ pitch: UInt8, _ channel: UInt8) -> UInt16 { UInt16(channel & 0x0F) << 8 | UInt16(pitch & 0x7F) }
+
+    public mutating func noteOn(_ pitch: UInt8, channel: UInt8) { notes.insert(SoundingNotes.key(pitch, channel)) }
+    public mutating func noteOff(_ pitch: UInt8, channel: UInt8) { notes.remove(SoundingNotes.key(pitch, channel)) }
+
+    /// Remove and return every sounding (pitch, channel).
+    public mutating func drain() -> [(pitch: UInt8, channel: UInt8)] {
+        let all = notes.map { (pitch: UInt8($0 & 0x7F), channel: UInt8($0 >> 8)) }
+        notes.removeAll()
+        return all.sorted { ($0.channel, $0.pitch) < ($1.channel, $1.pitch) }
+    }
+
+    public var count: Int { notes.count }
+}
+
 /// One timed message in a flattened playback timeline.
 public struct PlaybackEvent: Equatable, Sendable {
     public enum Kind: Equatable, Sendable {

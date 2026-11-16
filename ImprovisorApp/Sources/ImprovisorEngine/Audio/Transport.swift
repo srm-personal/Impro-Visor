@@ -116,6 +116,8 @@ public final class Transport: @unchecked Sendable {
 
     deinit {
         isRunning = false
+        // The scheduler thread may never tick again; never leave notes ringing.
+        backend.allNotesOff()
     }
 
     private func startSchedulerThread() {
@@ -226,6 +228,7 @@ public final class Transport: @unchecked Sendable {
     /// Freeze position. Does not silence the backend — any currently-sounding
     /// notes keep ringing (their note-offs simply won't arrive until resumed).
     public func pause() {
+        defer { backend.allNotesOff() }   // a paused note must not keep ringing
         var notify = false
         lock.lock()
         if _state == .playing || _state == .countingIn {
@@ -251,11 +254,14 @@ public final class Transport: @unchecked Sendable {
         if let s = resumed { dispatchCallback { [weak self] in self?.onStateChange?(s) } }
     }
 
-    /// Stop playback: silence the backend and reset to position 0. Applied on
-    /// the next `tick()`.
+    /// Stop playback: silence the backend now and reset to position 0 on the
+    /// next `tick()`. Silencing is synchronous so Stop is immediate even if the
+    /// transport is released before the scheduler runs again.
     public func stop() {
-        lock.lock(); defer { lock.unlock() }
+        lock.lock()
         pendingCommand = .stop
+        lock.unlock()
+        backend.allNotesOff()
     }
 
     /// Reposition playback (queued for the next `tick()`), preserving the

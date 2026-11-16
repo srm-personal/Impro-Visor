@@ -23,6 +23,8 @@ public final class AVAudioEngineSynth: InstrumentBackend {
     private let engine = AVAudioEngine()
     private var synth: AVAudioUnit?
     private var started = false
+    private let lock = NSLock()
+    private var sounding = SoundingNotes()
 
     public init() {}
 
@@ -71,15 +73,24 @@ public final class AVAudioEngineSynth: InstrumentBackend {
     }
 
     public func noteOn(_ pitch: UInt8, velocity: UInt8, channel: UInt8) {
+        lock.lock(); sounding.noteOn(pitch, channel: channel); lock.unlock()
         send(0x90 | (channel & 0x0F), pitch & 0x7F, velocity & 0x7F)
     }
 
     public func noteOff(_ pitch: UInt8, channel: UInt8) {
+        lock.lock(); sounding.noteOff(pitch, channel: channel); lock.unlock()
         send(0x80 | (channel & 0x0F), pitch & 0x7F, 0)
     }
 
+    /// Explicit note-offs for everything sounding (the DLS synth ignores the
+    /// "all notes off" controller), then All Notes Off / All Sound Off anyway.
     public func allNotesOff() {
-        for channel in 0..<16 { send(0xB0 | UInt8(channel), 123, 0) }
+        lock.lock(); let notes = sounding.drain(); lock.unlock()
+        for n in notes { send(0x80 | (n.channel & 0x0F), n.pitch & 0x7F, 0) }
+        for channel in 0..<16 {
+            send(0xB0 | UInt8(channel), 123, 0)
+            send(0xB0 | UInt8(channel), 120, 0)
+        }
     }
 
     private func send(_ status: UInt8, _ data1: UInt8, _ data2: UInt8) {

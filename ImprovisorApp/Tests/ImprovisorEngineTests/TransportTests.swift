@@ -138,6 +138,9 @@ final class TransportTests: XCTestCase {
 
         transport.pause()
         XCTAssertEqual(transport.state, .paused)
+        // Pausing silences immediately (a held note must not keep ringing).
+        XCTAssertEqual(backend.calls.map(\.call), [.allNotesOff])
+        backend.calls.removeAll()
 
         clock.advance(5.0) // large jump while paused must be ignored
         transport.tick()
@@ -285,10 +288,11 @@ final class TransportTests: XCTestCase {
         backend.calls.removeAll()
 
         transport.stop()
-        XCTAssertEqual(transport.state, .playing, "stop is applied on the next tick, not immediately")
+        XCTAssertEqual(transport.state, .playing, "the state change is applied on the next tick")
+        XCTAssertEqual(backend.calls.map(\.call), [.allNotesOff], "but silence is immediate")
         transport.tick()
         XCTAssertEqual(transport.state, .stopped)
-        XCTAssertEqual(backend.calls.map(\.call), [.allNotesOff])
+        XCTAssertEqual(backend.calls.map(\.call), [.allNotesOff, .allNotesOff])
         XCTAssertEqual(transport.positionSlot, 0)
     }
 
@@ -335,5 +339,61 @@ final class TransportTests: XCTestCase {
             XCTAssertEqual(p.channel, s.channel)
             XCTAssertEqual(p.kind, s.kind)
         }
+    }
+}
+
+// MARK: - Stop must silence immediately (regression: notes kept ringing)
+
+final class StopSilencesTests: XCTestCase {
+    final class Recorder: InstrumentBackend, @unchecked Sendable {
+        let lock = NSLock(); var log: [String] = []
+        func start() throws {}
+        func stop() {}
+        func programChange(_ program: UInt8, channel: UInt8) {}
+        func noteOn(_ pitch: UInt8, velocity: UInt8, channel: UInt8) { lock.lock(); log.append("on"); lock.unlock() }
+        func noteOff(_ pitch: UInt8, channel: UInt8) { lock.lock(); log.append("off"); lock.unlock() }
+        func allNotesOff() { lock.lock(); log.append("allOff"); lock.unlock() }
+        var allOffCount: Int { lock.lock(); defer { lock.unlock() }; return log.filter { $0 == "allOff" }.count }
+    }
+
+    func testStopSilencesWithoutWaitingForATick() {
+        let backend = Recorder()
+        let transport = Transport(backend: backend, clock: SystemClock(), startScheduler: false)
+        transport.load(tracks: [MIDITrack(name: "t", channel: 0, program: 0,
+                                          notes: [ScheduledNote(pitch: 60, velocity: 90, startTick: 0, duration: 480, channel: 0)])],
+                       slotsPerMeasure: 480)
+        transport.play()
+        transport.tick()
+        let before = backend.allOffCount
+        transport.stop()          // no tick afterwards
+        XCTAssertGreaterThan(backend.allOffCount, before)
+    }
+
+    func testReleasingATransportSilences() {
+        let backend = Recorder()
+        var transport: Transport? = Transport(backend: backend, clock: SystemClock(), startScheduler: false)
+        transport?.play()
+        let before = backend.allOffCount
+        transport = nil
+        XCTAssertGreaterThan(backend.allOffCount, before)
+    }
+
+    func testPauseSilences() {
+        let backend = Recorder()
+        let transport = Transport(backend: backend, clock: SystemClock(), startScheduler: false)
+        transport.play(); transport.tick()
+        let before = backend.allOffCount
+        transport.pause()
+        XCTAssertGreaterThan(backend.allOffCount, before)
+    }
+
+    func testSoundingNotesTracker() {
+        var s = SoundingNotes()
+        s.noteOn(60, channel: 1); s.noteOn(64, channel: 1); s.noteOn(36, channel: 9)
+        s.noteOff(64, channel: 1)
+        XCTAssertEqual(s.count, 2)
+        let drained = s.drain()
+        XCTAssertEqual(drained.map { "\($0.channel):\($0.pitch)" }, ["1:60", "9:36"])
+        XCTAssertEqual(s.count, 0)
     }
 }
