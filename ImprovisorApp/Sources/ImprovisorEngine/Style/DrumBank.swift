@@ -41,4 +41,12 @@ public enum DrumBank {
     public static func midi(for name: String) -> Int? {
         byName[name]
     }
+
+    /// Java `DrumRuleRep`: the instrument is either a number or one of the
+    /// spaceless names; an unknown name is -1 (`numberFromSpacelessDrumName`).
+    public static func number(for nameOrNumber: String) -> Int {
+        if let n = Int(nameOrNumber) { return n }
+        if let d = Double(nameOrNumber) { return Int(d) }
+        return byName[nameOrNumber] ?? -1
+    }
 }

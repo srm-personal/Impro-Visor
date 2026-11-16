@@ -38,8 +38,21 @@ public struct ChordForm: Equatable, Sendable {
     /// C-rooted form (e.g. `(G major pentatonic)` over CM7), first = preferred.
     public let scales: [ScaleReference]
 
+    /// `spell`, `priority` and `color` as absolute MIDI notes of the C-rooted
+    /// form, keeping the octave marks written in the vocabulary (`d+` = 74).
+    /// Java works on these NoteSymbol lists, and the octave survives into bass
+    /// lines and generated voicings, so the accompaniment engine uses these
+    /// rather than the octave-less pitch classes above.
+    public let spellNotes: [Int]
+    public let priorityNotes: [Int]
+    public let colorNotes: [Int]
+
     public init(name: String, family: String, spell: [PitchClass], color: [PitchClass],
-                priority: [PitchClass] = [], voicings: [Voicing] = [], scales: [ScaleReference] = []) {
+                priority: [PitchClass] = [], voicings: [Voicing] = [], scales: [ScaleReference] = [],
+                spellNotes: [Int]? = nil, priorityNotes: [Int]? = nil, colorNotes: [Int]? = nil) {
+        self.spellNotes = spellNotes ?? spell.map { Constants.CMIDI + $0.semitones }
+        self.priorityNotes = priorityNotes ?? priority.map { Constants.CMIDI + $0.semitones }
+        self.colorNotes = colorNotes ?? color.map { Constants.CMIDI + $0.semitones }
         self.name = name
         self.family = family
         self.spell = spell
@@ -97,11 +110,18 @@ public final class Vocabulary: Sendable {
     private let aliases: [String: String]
     /// Scale spellings at root C, keyed by type (`major`, `bebop dominant`, …).
     private let scales: [String: [PitchClass]]
+    /// Scale spellings at C as absolute MIDI notes exactly as written
+    /// (including the closing octave note), keyed by type. Java `ScaleForm.spell`.
+    private let scaleNotesByType: [String: [Int]]
+    /// `(scale (name C x) (same C y))` aliases, type → type.
+    private let scaleAliases: [String: String]
 
     public init(source: String) {
         var forms: [String: ChordForm] = [:]
         var aliases: [String: String] = [:]
         var scales: [String: [PitchClass]] = [:]
+        var scaleNotes: [String: [Int]] = [:]
+        var scaleAliases: [String: String] = [:]
 
         for form in PolyaParser.parseAll(source) {
             guard case let .list(list) = form else { continue }
@@ -118,6 +138,15 @@ public final class Vocabulary: Sendable {
                         var tones: [PitchClass] = []
                         for pc in spelled where !tones.contains(where: { $0.semitones == pc.semitones }) { tones.append(pc) }
                         scales[type] = tones
+                        // Java looks definitions up with `assoc`: the FIRST one wins.
+                        if scaleNotes[type] == nil && scaleAliases[type] == nil {
+                            if let same = list.assoc("same") {
+                                let target = same.rest().toArray().compactMap(\.symbolValue).dropFirst()
+                                scaleAliases[type] = target.joined(separator: " ")
+                            } else {
+                                scaleNotes[type] = Vocabulary.midiNotes(list.assoc("spell"))
+                            }
+                        }
                     }
                 }
                 continue
@@ -128,6 +157,9 @@ public final class Vocabulary: Sendable {
                   case let .symbol(name)? = nameList.secondOrNil()
             else { continue }
 
+            // Java resolves names with `assoc` over the definitions in file
+            // order, so the FIRST definition of a name wins.
+            if forms[name] != nil || aliases[name] != nil { continue }
             if let sameList = list.assoc("same"),
                case let .symbol(target)? = sameList.secondOrNil() {
                 aliases[name] = target
@@ -141,12 +173,29 @@ public final class Vocabulary: Sendable {
             let family = list.assoc("family").flatMap { $0.secondOrNil()?.symbolValue } ?? "unknown"
             let scaleRefs = Vocabulary.scaleReferences(list.assoc("scales"))
             forms[name] = ChordForm(name: name, family: family, spell: spell, color: color,
-                                    priority: priority, voicings: voicings, scales: scaleRefs)
+                                    priority: priority, voicings: voicings, scales: scaleRefs,
+                                    spellNotes: Vocabulary.midiNotes(list.assoc("spell")),
+                                    priorityNotes: Vocabulary.midiNotes(list.assoc("priority")),
+                                    colorNotes: Vocabulary.midiNotes(list.assoc("color")))
         }
 
         self.forms = forms
         self.aliases = aliases
         self.scales = scales
+        self.scaleNotesByType = scaleNotes
+        self.scaleAliases = scaleAliases
+    }
+
+    /// The C-rooted spelling of a scale type as absolute MIDI notes, following
+    /// `same` aliases (Java `Advisor.getScale(name).getSpell()`), or `nil`.
+    public func scaleNotes(named type: String) -> [Int]? {
+        var current = type
+        for _ in 0..<20 {
+            if let notes = scaleNotesByType[current] { return notes }
+            guard let next = scaleAliases[current] else { return nil }
+            current = next
+        }
+        return nil
     }
 
     /// Parse `(scales (C major) (G major pentatonic) …)`.

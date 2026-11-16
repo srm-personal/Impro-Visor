@@ -66,20 +66,84 @@ public enum StyleParser {
     }
 
     // MARK: Pattern parsing
+    //
+    // These follow the Java parsers segment by segment, including where they
+    // stop: BassPattern.makePattern and ChordPattern.makePattern return as soon
+    // as they meet something they do not recognize, so anything after it in the
+    // pattern — more rules, or the weight — is not read and keeps its default.
 
-    /// Parse `(bass-pattern (rules …) (weight w) [(push d)])` or the chord form.
+    /// Java `Pattern.weight` default.
+    static let defaultWeight = 10.0
+
+    /// Whether the entry is a bass pattern (as opposed to a chord pattern).
+    private static func isBass(_ entry: Polylist) -> Bool {
+        entry.firstOrNil() == .symbol("bass-pattern")
+    }
+
+    /// Parse `(bass-pattern (rules …) (weight w))` or
+    /// `(chord-pattern (rules …) (weight w) (push d))`. A rule is either a word
+    /// (`B4`, `X8`, `V90`) or a list `(X degree duration [modifier])`, which is
+    /// kept as its text (`"(X 5 8 U)"`).
     private static func parsePattern(_ entry: Polylist) -> Pattern? {
-        let rules = tokens(of: entry.assoc("rules"))
-        let weight = entry.assoc("weight")?.secondOrNil()?.doubleValue ?? 0
-        let push = entry.assoc("push")?.secondOrNil()?.description
-        guard !rules.isEmpty else { return nil }
+        let bass = isBass(entry)
+        var rules: [String] = []
+        var weight = defaultWeight
+        var push: String?
+
+        segments: for segment in entry.rest() {
+            guard case let .list(item) = segment, item.nonEmpty,
+                  case let .symbol(keyword) = item.firstOrNil() else {
+                break segments          // Java: setError and return
+            }
+            let body = item.rest()
+            switch keyword {
+            case "name":
+                continue
+            case "rules":
+                for rule in body {
+                    switch rule {
+                    case let .list(plist):
+                        let parts = plist.toArray()
+                        guard parts.count >= 3, parts[0] == .symbol("X") else { break segments }
+                        rules.append(plist.description)
+                    case let .symbol(word):
+                        guard let letter = word.first else { break segments }
+                        if bass {
+                            if word == "U" || word == "D" { rules.append(word); continue }
+                            guard "ABCNRSVX=".contains(letter) else { break segments }
+                        } else {
+                            guard "XRV".contains(letter) else { break segments }
+                        }
+                        rules.append(word)
+                    default:
+                        break segments  // a bare number is not a rule in Java
+                    }
+                }
+            case "weight":
+                guard let w = body.firstOrNil()?.doubleValue else {
+                    if bass { break segments } else { continue }
+                }
+                // ChordPattern stores `w.intValue()`; BassPattern `w.floatValue()`.
+                weight = bass ? Double(Float(w)) : Double(Int(w))
+            case "push":
+                guard !bass else { break segments }
+                if let p = body.firstOrNil() { push = p.description }
+            default:
+                // `use` (rule definitions) is accepted by Java but no shipped
+                // style has any; anything else ends the pattern.
+                break segments
+            }
+        }
         return Pattern(rules: rules, weight: weight, push: push)
     }
 
-    /// Parse `(drum-pattern (drum Name hits…)… (weight w))`.
+    /// Parse `(drum-pattern (drum Name hits…)… (weight w))`. Each drum may list
+    /// its hits bare (`X8 X8`) or inside `(rules X8 X8)`, optionally with a
+    /// `(name …)`. A second rule for the same instrument REPLACES the first
+    /// (Java `DrumPattern.addRule`).
     private static func parseDrumPattern(_ entry: Polylist) -> DrumPattern? {
         var voices: [DrumVoice] = []
-        var weight = 0.0
+        var weight = defaultWeight
         for element in entry.rest() {
             guard case let .list(sub) = element,
                   case let .symbol(tag) = sub.firstOrNil()
@@ -88,21 +152,30 @@ public enum StyleParser {
             case "drum":
                 let body = sub.rest()
                 guard let name = body.firstOrNil()?.description else { continue }
-                let hits = body.rest().map(\.description)
+                var hits: [String] = []
+                for item in body.rest() {
+                    switch item {
+                    case let .symbol(word):
+                        hits.append(word)
+                    case let .list(inner):
+                        if inner.firstOrNil() == .symbol("rules") {
+                            for hit in inner.rest() {
+                                if case let .symbol(word) = hit { hits.append(word) }
+                            }
+                        }
+                    default:
+                        break
+                    }
+                }
+                let number = DrumBank.number(for: name)
+                voices.removeAll { DrumBank.number(for: $0.name) == number }
                 voices.append(DrumVoice(name: name, hits: hits))
             case "weight":
-                weight = sub.secondOrNil()?.doubleValue ?? 0
+                if let w = sub.secondOrNil()?.doubleValue { weight = Double(Float(w)) }
             default:
                 break
             }
         }
-        guard !voices.isEmpty else { return nil }
         return DrumPattern(voices: voices, weight: weight)
-    }
-
-    /// Tokens after the keyword of a `(rules …)`-style sub-list.
-    private static func tokens(of list: Polylist?) -> [String] {
-        guard let list else { return [] }
-        return list.rest().map(\.description)
     }
 }

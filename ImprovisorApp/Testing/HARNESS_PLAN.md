@@ -81,3 +81,35 @@ reports to `Testing/.build/reports`.
 3. Fix the Swift engine, one root cause per commit, logged in BUG_LOG.md.
 4. `FEATURE_COVERAGE.md` inventory.
 5. XCUITest smoke suite for the practice loop.
+
+## Remaining work (state when the session stopped, 2026-11-16)
+
+Done: Java headless build + driver, 855 goldens, `JavaRandom`, leadsheet
+sweep 3280/3280, round trip 3280/3280, comparison test with diffs.
+Not done: engine re-port (0/855), style sweep (63/145), solo goldens,
+FEATURE_COVERAGE.md, XCUITest suite.
+
+Facts established from the Java source that the engine port must reproduce:
+
+- One RNG stream. Per section, in order: drum patterns for the whole section;
+  then per chord: chord pattern choice (`getChordPattern`, `nextInt((int)sum)`,
+  `random <= weights`), one `nextInt(n)` per strike for the voicing pick (even
+  when n = 1), then bass pattern choice (`getPattern`, `random < weights`) and
+  bass rule draws (`nextInt` for C/S/A; one `nextDouble` per octave shift in
+  `placePitchNear`; one in `pressure` when outside the soft margin).
+- `findRise(root)` is negative for F, Bb, Eb, Ab, Db, Gb (flat preference), so
+  spellings and voicings are transposed DOWN for those roots.
+- Vocabulary voicings are tried in REVERSE file order (`addVoicing` conses).
+  A chosen voicing is voicing + extension, unsorted; placement uses its first
+  note. `chooseVoicings` averages the leap in both directions.
+- A rest in a chord pattern resets the "previous voicing" to empty.
+- Bass: notes start two octaves down, then `placePitchNear` (±11 of the last
+  note) and `pressure`. Volume is a running value across the whole section.
+  `N` drops its own note and adds its duration to the next segment's first
+  note. If no pattern fits, the shortest longer one is used whole (overrun).
+- `makeSwing` works on units including rests, beat = 120 slots from the start
+  of each pattern (chords, drums) or section (bass), then every unit's length
+  becomes the gap to the next unit.
+- Chord patterns longer than the chord are split; the remainder carries over.
+- Channels in Java: melody 0, chords 3, bass 6, drums 9; all default
+  velocities are 127.
