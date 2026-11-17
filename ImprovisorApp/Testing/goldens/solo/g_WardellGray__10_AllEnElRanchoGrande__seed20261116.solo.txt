@@ -1,0 +1,124 @@
+# id g_WardellGray__10_AllEnElRanchoGrande__seed20261116
+# leadsheet leadsheets/imaginary-book/AllEnElRanchoGrande.ls
+# grammar WardellGray.grammar
+# seed 20261116
+# abstract ((slope 0 0 C2) (slope 6 6 C2) (slope 0 0 R1) (slope -3 -1 C8) (slope -4 -3 C8 C8 C8) (slope 1 5 C8 L8 C8) (slope -3 -3 C8) (slope 0 0 C1) (slope 3 5 R2+4 C8) (slope -2 -2 C8) (slope 11 13 C8) (slope -7 -7 L8) (slope 1 4 C8/3 L8/3 X8/3 L8) (slope -1 -1 L8 C8 C8) (slope 3 5 L4) (slope -3 -1 C8 A8 X8 C8 L4) (slope 9 11 R2+4+8 L8) (slope 0 0 C1) (slope 6 8 L4) (slope -5 -5 C8) (slope 3 3 C8 R2) (slope -2 -1 R4 C8) (slope -2 -1 C8 C8/3) (slope 3 3 X8/3 C8/3 L8) (slope -2 -2 A8) (slope 4 6 C8) (slope -5 -5 C8) (slope 2 6 C4 C2) (slope -2 -1 C8) (slope -3 -3 X8 R2+4) (slope -2 -1 R4 C8) (slope -2 -1 C8 C8/3) (slope 3 3 X8/3 C8/3 L8) (slope -2 -2 A8))
+# params minPitch=60 maxPitch=82 minInterval=0 maxInterval=6 leapProb=0.01 avoidRepeats=true rectify=true
+# chordSlots 6720
+# lick size 6720
+lick 0 72 240 127
+lick 240 77 240 127
+lick 480 -1 480 127
+lick 960 76 60 127
+lick 1020 72 60 127
+lick 1080 67 60 127
+lick 1140 64 60 127
+lick 1200 67 60 127
+lick 1260 69 60 127
+lick 1320 72 60 127
+lick 1380 70 540 127
+lick 1920 -1 360 127
+lick 2280 72 60 127
+lick 2340 69 60 127
+lick 2400 81 60 127
+lick 2460 76 60 127
+lick 2520 77 40 127
+lick 2560 79 40 127
+lick 2600 81 40 127
+lick 2640 83 60 127
+lick 2700 81 60 127
+lick 2760 77 60 127
+lick 2820 72 60 127
+lick 2880 76 120 127
+lick 3000 72 60 127
+lick 3060 71 60 127
+lick 3120 70 60 127
+lick 3180 69 60 127
+lick 3240 67 120 127
+lick 3360 -1 420 127
+lick 3780 75 60 127
+lick 3840 76 480 127
+lick 4320 79 120 127
+lick 4440 72 60 127
+lick 4500 77 60 127
+lick 4560 -1 360 127
+lick 4920 72 60 127
+lick 4980 69 60 127
+lick 5040 65 40 127
+lick 5080 68 40 127
+lick 5120 72 40 127
+lick 5160 76 60 127
+lick 5220 74 60 127
+lick 5280 79 60 127
+lick 5340 72 60 127
+lick 5400 76 120 127
+lick 5520 79 240 127
+lick 5760 76 60 127
+lick 5820 72 60 127
+lick 5880 -1 480 127
+lick 6360 69 60 127
+lick 6420 65 60 127
+lick 6480 60 40 127
+lick 6520 63 40 127
+lick 6560 65 40 127
+lick 6600 67 60 127
+lick 6660 65 60 127
+# rectified size 6720
+rectified 0 72 240 127
+rectified 240 77 240 127
+rectified 480 -1 480 127
+rectified 960 76 60 127
+rectified 1020 72 60 127
+rectified 1080 67 60 127
+rectified 1140 64 60 127
+rectified 1200 67 60 127
+rectified 1260 70 60 127
+rectified 1320 72 60 127
+rectified 1380 70 540 127
+rectified 1920 -1 360 127
+rectified 2280 72 60 127
+rectified 2340 69 60 127
+rectified 2400 81 60 127
+rectified 2460 76 60 127
+rectified 2520 77 40 127
+rectified 2560 81 80 127
+rectified 2640 84 60 127
+rectified 2700 81 60 127
+rectified 2760 77 60 127
+rectified 2820 72 60 127
+rectified 2880 77 120 127
+rectified 3000 72 120 127
+rectified 3120 70 60 127
+rectified 3180 69 180 127
+rectified 3360 -1 420 127
+rectified 3780 75 60 127
+rectified 3840 76 480 127
+rectified 4320 81 120 127
+rectified 4440 72 60 127
+rectified 4500 77 60 127
+rectified 4560 -1 360 127
+rectified 4920 72 60 127
+rectified 4980 69 60 127
+rectified 5040 65 40 127
+rectified 5080 69 40 127
+rectified 5120 72 40 127
+rectified 5160 77 60 127
+rectified 5220 72 60 127
+rectified 5280 79 60 127
+rectified 5340 72 60 127
+rectified 5400 76 120 127
+rectified 5520 79 240 127
+rectified 5760 76 60 127
+rectified 5820 72 60 127
+rectified 5880 -1 480 127
+rectified 6360 69 60 127
+rectified 6420 65 60 127
+rectified 6480 60 40 127
+rectified 6520 65 80 127
+rectified 6600 69 60 127
+rectified 6660 65 60 127
+# status Grammar loaded: /Users/srmorin/src/Impro-Visor/ImprovisorApp/Testing/.build/home/impro-visor-version-10.2-files/grammars/WardellGray.grammar
+# status Grammar loaded with companion soloist file: /Users/srmorin/src/Impro-Visor/ImprovisorApp/Testing/.build/home/impro-visor-version-10.2-files/grammars/WardellGray.soloist
+# status There was an IO exception reading the soloist file: /Users/srmorin/src/Impro-Visor/ImprovisorApp/Testing/.build/home/impro-visor-version-10.2-files/grammars/WardellGray.soloist java.io.InvalidClassException: imp.cluster.DataPoint; local class incompatible: stream classdesc serialVersionUID = -1082533791935688171, local class serialVersionUID = 2672838631550085507
+# status There was an IO exception reading the soloist file: /Users/srmorin/src/Impro-Visor/ImprovisorApp/Testing/.build/home/impro-visor-version-10.2-files/grammars/WardellGray.soloist java.io.InvalidClassException: imp.cluster.DataPoint; local class incompatible: stream classdesc serialVersionUID = -1082533791935688171, local class serialVersionUID = 2672838631550085507
+# status Loaded soloist file: /Users/srmorin/src/Impro-Visor/ImprovisorApp/Testing/.build/home/impro-visor-version-10.2-files/grammars/WardellGray.soloist

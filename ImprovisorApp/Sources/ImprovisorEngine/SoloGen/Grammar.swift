@@ -34,6 +34,10 @@ public struct Grammar: Equatable, Sendable {
     public var startSymbol: String
     /// The production rules, in file order.
     public var rules: [GrammarRule]
+    /// Every top-level list of the grammar file, in file order — what Java's
+    /// `Grammar.rules` holds. `JavaGrammarExpander` works on these directly,
+    /// because Java matches rules by scanning the raw forms.
+    public var forms: [Polylist] = []
 
     public init(parameters: [String: PolyValue] = [:],
                 startSymbol: String = "P",

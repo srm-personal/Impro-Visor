@@ -75,6 +75,7 @@ public static void main(String[] args) throws Exception
     }
   else if( mode.equals("styles") ) { styles(args[1]); }
   else if( mode.equals("render") ) { render(args[1], args[2]); }
+  else if( mode.equals("solo") ) { solo(args[1], args[2]); }
   else { usage(); }
   System.exit(0);
   }
@@ -334,9 +335,12 @@ static void render(String casesFile, String outDir) throws Exception
       // Exactly what the app does for Play (PlayScoreCommand:300-323) and for
       // MIDI export (ExportToMidiCommand:115-121): swing a COPY of the score,
       // then render it.
+      // The app renders with the leadsheet's own playback transposition
+      // (Notate.getTransposition()); Score.copy() does not carry it over.
+      Transposition transposition = score.getTransposition();
       score = score.copy();
       score.makeSwing();
-      Sequence seq = score.render(PPQN, Transposition.none);
+      Sequence seq = score.render(PPQN, transposition);
       List<String> messages = ErrorLog.drain();
       writeEvents(new File(outDir, id + ".events.txt"), id, path, style, seed, score, seq, messages);
       MidiSystem.write(seq, 1, new File(outDir, id + ".mid"));
@@ -454,6 +458,142 @@ static void writeEvents(File file, String id, String path, String style, long se
     out.println(e.channel + " " + e.tick + " " + e.pitch + " " + e.velocity + " " + e.duration);
     }
   out.close();
+  }
+
+// ---------------------------------------------------------------- solo
+
+/**
+ * CASES.tsv columns: id, leadsheet path, grammar file name, seed.
+ *
+ * Follows Notate.originalGenerate / makeLick / putLick for the default
+ * settings (use grammar; no soloist outline, critic, transform or trading),
+ * improvising over the whole first chorus. Three stages are dumped so the
+ * Swift port can be matched one stage at a time:
+ *
+ *   abstract   the abstract melody from Grammar.run
+ *   lick       the notes from LickGen.fillMelody, trimmed as Notate trims them
+ *   rectified  after RectifyPitchesCommand, when the grammar has rectify true
+ */
+static void solo(String casesFile, String outDir) throws Exception
+  {
+  new File(outDir).mkdirs();
+  for( String line : readLines(casesFile) )
+    {
+    String[] c = line.split("\t");
+    String id = c[0], path = c[1], grammarName = c[2];
+    long seed = Long.parseLong(c[3]);
+    PrintWriter out = new PrintWriter(new File(outDir, id + ".solo.txt"), "UTF-8");
+    out.println("# id " + id);
+    out.println("# leadsheet " + path);
+    out.println("# grammar " + grammarName);
+    out.println("# seed " + seed);
+    try
+      {
+      ErrorLog.drain();
+      Hooks.status.clear();
+      Score score = load(path);
+      ChordPart chordProg = score.getChordProg();
+      Hooks.chords = chordProg;
+      Hooks.melody = score.getPart(0);
+
+      // Seed BEFORE constructing LickGen: its field initializer draws once
+      // (prevPitch = (int)(Math.random() * 20 + 60)).
+      Rng.seed(seed);
+      String grammarFile = new File(ImproVisor.getGrammarDirectory(), grammarName).getPath();
+      imp.lickgen.LickGen lickgen = new imp.lickgen.LickGen(grammarFile, null, null);
+
+      // LickgenFrame.resetTriageParameters: the fill parameters come from the grammar.
+      int minPitch = Integer.parseInt(lickgen.getParameter(imp.lickgen.LickGen.MIN_PITCH_STRING));
+      int maxPitch = Integer.parseInt(lickgen.getParameter(imp.lickgen.LickGen.MAX_PITCH_STRING));
+      int minInterval = Integer.parseInt(lickgen.getParameter(imp.lickgen.LickGen.MIN_INTERVAL));
+      int maxInterval = Integer.parseInt(lickgen.getParameter(imp.lickgen.LickGen.MAX_INTERVAL));
+      double leapProb = Double.parseDouble(lickgen.getParameter(imp.lickgen.LickGen.LEAP_PROB));
+      double chordToneWeight = Double.parseDouble(lickgen.getParameter(imp.lickgen.LickGen.CHORD_TONE_WEIGHT));
+      double colorToneWeight = Double.parseDouble(lickgen.getParameter(imp.lickgen.LickGen.COLOR_TONE_WEIGHT));
+      double scaleToneWeight = Double.parseDouble(lickgen.getParameter(imp.lickgen.LickGen.SCALE_TONE_WEIGHT));
+      double chordToneDecay = Double.parseDouble(lickgen.getParameter(imp.lickgen.LickGen.CHORD_TONE_DECAY));
+      boolean avoidRepeats = Boolean.parseBoolean(lickgen.getParameter(imp.lickgen.LickGen.AVOID_REPEATS));
+      boolean rectify = Boolean.parseBoolean(lickgen.getParameter(imp.lickgen.LickGen.RECTIFY));
+
+      // resetTriageParameters(true), run whenever a grammar is loaded.
+      lickgen.setPreferredScale(lickgen.getParameter(imp.lickgen.LickGen.SCALE_ROOT),
+                                lickgen.getParameter(imp.lickgen.LickGen.SCALE_TYPE));
+
+      // Notate.originalGenerate with nothing selected.
+      int start = 0;
+      int end = chordProg.size();
+      int totalSlots = end - start + 1;
+      int beatsRequested = totalSlots / imp.Constants.BEAT;
+
+      // ASSUMPTION: the pitch-probability grid holds what "Fill" computes from
+      // the grammar's weights (LickgenFrame.FillProbsButtonActionPerformed).
+      lickgen.setProbs(lickgen.fillProbs(chordProg, chordToneWeight, scaleToneWeight, colorToneWeight,
+                                         chordToneDecay, start, totalSlots));
+
+      Polylist abstractMelody = lickgen.generateRhythmFromGrammar(start, totalSlots);
+      out.println("# abstract " + clean(String.valueOf(abstractMelody)));
+
+      MelodyPart lick = lickgen.fillMelody(minPitch, maxPitch, minInterval, maxInterval, imp.Constants.BEAT,
+                                           leapProb, abstractMelody, chordProg, start, avoidRepeats);
+      // Notate.makeLick, then originalGenerate.
+      int desiredSize = end - start + 1;
+      if( lick.size() > desiredSize )
+        {
+        lick = lick.extract(0, desiredSize - 1, true);
+        }
+      if( lick.size() / imp.Constants.BEAT > beatsRequested )
+        {
+        lick = lick.extract(0, imp.Constants.BEAT * beatsRequested - 1, true);
+        }
+      out.println("# params minPitch=" + minPitch + " maxPitch=" + maxPitch + " minInterval=" + minInterval
+                  + " maxInterval=" + maxInterval + " leapProb=" + leapProb + " avoidRepeats=" + avoidRepeats
+                  + " rectify=" + rectify);
+      out.println("# chordSlots " + chordProg.size());
+      dumpPart(out, "lick", lick);
+
+      // Notate.putLick: paste into the chorus, then rectify the selection.
+      MelodyPart target = score.getPart(0);
+      target.newPasteOver(lick, start);
+      if( rectify )
+        {
+        // LickgenFrame.getRectifyOptions(): the dialog's initial check boxes —
+        // chord on, color OFF, approach on, "avoid repeats" on
+        // (LickgenFrame.java:1253, 1276, 1084; colorBox is never selected).
+        new imp.com.RectifyPitchesCommand(target, start, end, chordProg, false, false,
+                                          true, false, true, true).execute();
+        }
+      dumpPart(out, "rectified", target);
+      for( String m : Hooks.status ) out.println("# status " + clean(m));
+      for( String m : ErrorLog.drain() ) out.println("# message " + clean(m));
+      }
+    catch( Throwable t )
+      {
+      out.println("# threw " + clean(t.toString()));
+      StackTraceElement[] st = t.getStackTrace();
+      for( int i = 0; i < Math.min(6, st.length); i++ ) out.println("# at " + st[i]);
+      }
+    out.close();
+    }
+  }
+
+/** One line per unit: stage, slot, pitch (-1 = rest), duration, volume. */
+static void dumpPart(PrintWriter out, String stage, MelodyPart part)
+  {
+  out.println("# " + stage + " size " + part.size());
+  int slot = 0;
+  Part.PartIterator it = part.iterator();
+  while( it.hasNext() )
+    {
+    int index = it.nextIndex();
+    Unit u = it.next();
+    if( u instanceof Note )
+      {
+      Note n = (Note)u;
+      out.println(stage + " " + index + " " + (n.isRest() ? -1 : n.getPitch()) + " " + n.getRhythmValue()
+                  + " " + n.getVolume());
+      }
+    slot = index;
+    }
   }
 
 // ---------------------------------------------------------------- rng

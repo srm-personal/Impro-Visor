@@ -15,7 +15,7 @@ port. IDs refer to `BUG_LOG.md`.
 |---|------|-------------------------|
 | P1-1 | **Run the UI suite once at your desk**: `ImprovisorApp/scripts/uitest.sh`. Only the open-tune test could be verified in the agent session (synthetic clicks did not register there). | Report which of `PracticeLoopTests` / `SmokeTests` fail, with the message. |
 | P1-2 | **Java quirks now reproduced on purpose** — keep or override? Q-03 `no-style` sections (chords pile up; clearly a Java bug and sounds wrong), Q-02 melody swing on quarter notes in 6/8, 12/8, 2/2, Q-01 unknown chords silently dropped, Q-04 Java throws on an NC chord under a wildcard substitution (Swift plays on; this is the one failing golden case). | A keep/override decision per quirk. An override means a test marked "intentional divergence from Java" next to the golden. |
-| P1-3 | **Solo goldens (O-06).** Java's `LickGen` cannot run without a `Notate` window. Options: (a) let the driver open a real off-screen Notate; (b) a harness copy of `LickGen`/`Grammar` with the ~20 `notate.…` calls replaced by constants. (b) is more work but stays headless and reproducible. | Pick (a) or (b). |
+| P1-3 ✅ decided: (b) | **Solo goldens (O-06).** Java's `LickGen` cannot run without a `Notate` window. Options: (a) let the driver open a real off-screen Notate; (b) a harness copy of `LickGen`/`Grammar` with the ~20 `notate.…` calls replaced by constants. (b) is more work but stays headless and reproducible. | Pick (a) or (b). |
 | P1-4 | **MIDI channel numbers (O-05).** Java: melody 0, chords 3, bass 6, drums 9. Swift: 2, 1, 0, 9. Matters only for exported MIDI and external synth setups. | Match Java, or keep. |
 | P1-5 | **iOS.** The request mentioned iOS; there is no iOS target. | Whether an iOS target is in scope. |
 
@@ -23,8 +23,8 @@ port. IDs refer to `BUG_LOG.md`.
 
 | # | Item | Approach |
 |---|------|----------|
-| P2-1 | **Solo generation port.** The Swift generator is not a port (no scorer / expectancy / note chooser). Needs `LickGen.java` (3,668 lines), `Grammar.java`, `NoteChooser.java`. | After P1-3: goldens for ~10 grammars × 5 tunes × 3 seeds, then port against them the way the accompaniment was done. Largest remaining item. |
-| P2-2 | **Playback transposition (O-07)** is parsed but not applied. | Add `(playback-transpose …)` cases to the golden matrix (driver must pass `score.getTransposition()`), then apply in `ArrangementBuilder`. Small. |
+| P2-1 in progress | **Solo generation port.** Stage 1 (grammar expansion → abstract melody) is done and matches Java 141/141. Stage 2 (`LickGen.fillMelody`: turning the abstract melody into notes) and stage 3 (rectification) remain; final solos are 0/141 until then. The Swift generator is not a port (no scorer / expectancy / note chooser). Needs `LickGen.java` (3,668 lines), `Grammar.java`, `NoteChooser.java`. | After P1-3: goldens for ~10 grammars × 5 tunes × 3 seeds, then port against them the way the accompaniment was done. Largest remaining item. |
+| P2-2 ✅ done (B-018) | **Playback transposition** is now applied; 12 golden cases match. | Add `(playback-transpose …)` cases to the golden matrix (driver must pass `score.getTransposition()`), then apply in `ArrangementBuilder`. Small. |
 | P2-3 | **Count-in.** Java renders a count-in chord part through the style; Swift plays its own click. | Add count-in cases to the driver; compare. |
 | P2-4 | **Custom voicing (O-04)**: `voicing-type custom` → `VoicingGenerator`. No shipped style uses it. | Golden cases with a test style using each `.fv` file; move the generator onto `JavaRandom`. |
 | P2-5 | **Uneven bars (O-01)**: Java aborts the chord part; Swift continues. | Decide (probably keep Swift), add a unit test documenting it. |

@@ -8,6 +8,7 @@ order within coverage buckets, so re-running gives the same file.
   own     the 50 tunes with their own styles/sections            50 cases
   seeds   5 tunes x 3 extra seeds in their own style             15 cases
   interp  50 tunes x the 2 interpolating/substituting styles   100 cases
+  transp  12 tunes with a playback transposition, own style     12 cases
 """
 import os, re, sys
 
@@ -104,6 +105,41 @@ for i, t in enumerate(tunes[:50:10]):
 for i, t in enumerate(tunes):
     for s in ("swing-interpolate", "swing-substitute"):
         cases.append((f"i{i:02d}_{slug(t['path'])}__{s}", t["path"], s, 3000 + i))
+
+# Playback transposition: tunes whose leadsheet transposes bass, chords or
+# melody on playback, in their own styles.
+def transposes(r):
+    text = open(os.path.join(REPO, r["path"]), encoding="latin-1").read()
+    m = re.search(r"\(playback-transpose([^)]*)\)", text)
+    return bool(m) and any(v != "0" for v in m.group(1).split())
+transposed = [r for r in sorted(rows, key=lambda r: r["path"])
+              if transposes(r) and 4 <= bars(r) <= 64 and r["msgs"].startswith("0")][:12]
+for i, t in enumerate(transposed):
+    cases.append((f"t{i:02d}_{slug(t['path'])}", t["path"], "-", 4000 + i))
+
+# Solo cases: 10 grammars x 5 tunes x 3 seeds. Half of the grammars use
+# `(builtin brick …)` conditions (which need a roadmap analysis), half do not.
+grammar_dir = os.path.join(REPO, "grammars")
+# Grammars whose names start with "_" are stubs (_empty, _emptyMotif, …). The
+# empty ones make Java's Grammar.outerFill loop forever (BUG_LOG Q-05), so
+# none of them is used as a golden case.
+grammars = sorted(f for f in os.listdir(grammar_dir) if f.endswith(".grammar") and not f.startswith("_"))
+def uses_bricks(g):
+    return "(builtin brick" in open(os.path.join(grammar_dir, g), encoding="latin-1").read()
+plain = [g for g in grammars if not uses_bricks(g)]
+bricks = [g for g in grammars if uses_bricks(g)]
+solo_grammars = plain[::max(1, len(plain) // 5)][:5] + bricks[::max(1, len(bricks) // 5)][:5]
+solo_cases = []
+for g in solo_grammars:
+    for i, t in list(enumerate(tunes))[::10]:
+        for seed in (1, 42, 20261116):
+            solo_cases.append((f"g_{slug(g[:-8])}__{i:02d}_{slug(t['path'])}__seed{seed}", t["path"], g, seed))
+assert len({c[0] for c in solo_cases}) == len(solo_cases)
+with open(os.path.join(TESTING, "goldens/solo-cases.tsv"), "w") as out:
+    out.write("# id\tleadsheet\tgrammar\tseed\n")
+    for c in solo_cases:
+        out.write("\t".join(map(str, c)) + "\n")
+print(f"{len(solo_cases)} solo cases over grammars: {', '.join(solo_grammars)}")
 
 ids = [c[0] for c in cases]
 assert len(ids) == len(set(ids)), "duplicate case ids"

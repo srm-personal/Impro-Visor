@@ -152,6 +152,8 @@ public enum ArrangementBuilder {
                                              chordChannel: AccompanimentGenerator.chordChannel,
                                              applySwing: options.applySwing,
                                              vocabulary: styles.chordVocabulary)
+                renderer.bassTransposition = score.playbackTranspose.bass
+                renderer.chordTransposition = score.playbackTranspose.chords
                 var out = SectionRender()
                 chordTime = renderer.render(chordPart: chordPart, startIndex: record.index, endIndex: endIndex,
                                             time: chordTime, rng: &rng, into: &out)
@@ -234,6 +236,6 @@ public enum ArrangementBuilder {
                 return previous
             }
         }
-        return slots.render(from: start, channel: channel).notes
+        return slots.render(from: start, channel: channel, transposition: score.playbackTranspose.melody).notes
     }
 }

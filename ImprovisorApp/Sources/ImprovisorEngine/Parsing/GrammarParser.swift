@@ -16,6 +16,7 @@ public enum GrammarParser {
         var grammar = Grammar()
 
         for form in PolyaParser.parseAll(content) {
+            if case let .list(any) = form { grammar.forms.append(any) }
             guard case let .list(list) = form,
                   case let .symbol(head) = list.firstOrNil()
             else { continue }

@@ -112,13 +112,13 @@ struct SlotPart {
 
     /// `MelodyPart.render`: lay the units end to end from `start`; rests only
     /// advance time. Returns the notes and the end time.
-    func render(from start: Int, channel: UInt8) -> (notes: [ScheduledNote], end: Int) {
+    func render(from start: Int, channel: UInt8, transposition: Int = 0) -> (notes: [ScheduledNote], end: Int) {
         var time = start
         var notes: [ScheduledNote] = []
         for unit in units() {
             if let pitch = unit.pitch {
                 // Note.render clamps to MIN_PITCH…MAX_PITCH.
-                notes.append(ScheduledNote(pitch: max(0, min(127, pitch)), velocity: unit.volume,
+                notes.append(ScheduledNote(pitch: max(0, min(127, pitch + transposition)), velocity: unit.volume,
                                            startTick: time, duration: unit.duration, channel: channel))
             }
             time += unit.duration
@@ -343,6 +343,11 @@ struct StyleRenderer {
     /// cut at a chord change, carried to the next chord of the section.
     private var residual: CompiledStyle.ChordPattern?
 
+    /// Playback transposition in semitones (`(playback-transpose bass chords
+    /// melody)`), applied as each note is written, like Java's Note.render.
+    var bassTransposition = 0
+    var chordTransposition = 0
+
     /// Passing-chord and substitution rules, when the style has any and a
     /// vocabulary is available to build the new chords.
     private let interpolator: ChordInterpolator?
@@ -541,7 +546,7 @@ struct StyleRenderer {
                 }
             }
             part.makeSwing(swing)
-            out.bass += part.render(from: startTime, channel: bassChannel).notes
+            out.bass += part.render(from: startTime, channel: bassChannel, transposition: bassTransposition).notes
         }
         return time
     }
@@ -602,7 +607,9 @@ struct StyleRenderer {
                     noStyleVoicings[current.start] = voicing
                 }
                 if let voicing {
-                    let bass = 36 + chord.bass.semitones       // Key.makeNote(bass, C2, 0)
+                    // Java: only the added bass note is transposed here; the
+                    // voicing is written at its own pitch (Chord.render).
+                    let bass = 36 + chord.bass.semitones + chordTransposition   // Key.makeNote(bass, C2, 0)
                     for pitch in voicing + [bass] {
                         out.chords.append(ScheduledNote(pitch: max(0, min(127, pitch)), velocity: 127,
                                                         startTick: ticks / 4, duration: (offTicks - ticks) / 4,
@@ -735,8 +742,9 @@ struct StyleRenderer {
                 if let notes = entry.notes {
                     if let v = entry.volume { volume = v }
                     for pitch in notes {
-                        out.chords.append(ScheduledNote(pitch: max(0, min(127, pitch)), velocity: volume,
-                                                        startTick: time, duration: dur, channel: chordChannel))
+                        out.chords.append(ScheduledNote(pitch: max(0, min(127, pitch + chordTransposition)),
+                                                        velocity: volume, startTick: time, duration: dur,
+                                                        channel: chordChannel))
                     }
                     previousChord = notes        // Java: a rest resets this to empty
                 }

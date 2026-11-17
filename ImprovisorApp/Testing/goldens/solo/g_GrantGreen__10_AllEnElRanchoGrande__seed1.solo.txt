@@ -1,0 +1,142 @@
+# id g_GrantGreen__10_AllEnElRanchoGrande__seed1
+# leadsheet leadsheets/imaginary-book/AllEnElRanchoGrande.ls
+# grammar GrantGreen.grammar
+# seed 1
+# abstract ((slope 19 21 R2+8 L8 R4) (X 6 2) (X 2 8) (X 3 8) (X 4 8) (X 5 8) (X 6 2) (X 2 8) (X 3 8) (X 4 8) (X 5 8) (slope -3 -1 C4+8) (slope -2 -2 L8) (slope 2 2 C8 C8) (slope -6 -6 R8 L8) (X 4 8) (X 5 8) (X 4 8) (X 3 8) (X #5 8) (X 5 8) (X 4 8) (X 3 8) R1 (slope 1 2 C4) (slope 4 4 C4) (slope -2 -1 C4+8 X8) (X 7 4+8) (X #5 8) (X 7 8) (X 1 8) R8 (X #4 8) (slope 0 0 C8) (slope 2 4 L8 C8 C8 C4) (slope -2 -2 L4) R1 (slope 4 6 C4) (slope 1 2 L4 C4 L4) (X 4 4) (X 3 8) (X 1 8) R4 (X 4 8) (X 3 8) (slope 6 8 C8) (slope 1 1 L8) (slope -6 -1 C8 L8 C8 L8 C8) (slope 3 3 C8) (slope 0 0 C8) (slope 5 5 C8) (slope -9 -9 R2+8 C8))
+# params minPitch=58 maxPitch=82 minInterval=0 maxInterval=6 leapProb=0.01 avoidRepeats=true rectify=true
+# chordSlots 6720
+# lick size 6720
+lick 0 -1 300 127
+lick 300 79 60 127
+lick 360 -1 120 127
+lick 480 74 240 127
+lick 720 62 60 127
+lick 780 64 60 127
+lick 840 65 60 127
+lick 900 67 60 127
+lick 960 69 240 127
+lick 1200 62 60 127
+lick 1260 64 60 127
+lick 1320 65 60 127
+lick 1380 67 60 127
+lick 1440 64 180 127
+lick 1620 63 60 127
+lick 1680 64 60 127
+lick 1740 67 60 127
+lick 1800 -1 60 127
+lick 1860 62 60 127
+lick 1920 70 60 127
+lick 1980 72 60 127
+lick 2040 70 60 127
+lick 2100 69 60 127
+lick 2160 73 60 127
+lick 2220 72 60 127
+lick 2280 70 60 127
+lick 2340 69 60 127
+lick 2400 -1 480 127
+lick 2880 72 120 127
+lick 3000 77 120 127
+lick 3120 73 180 127
+lick 3300 72 60 127
+lick 3360 70 180 127
+lick 3540 68 60 127
+lick 3600 70 60 127
+lick 3660 60 60 127
+lick 3720 -1 60 127
+lick 3780 66 60 127
+lick 3840 67 60 127
+lick 3900 69 60 127
+lick 3960 72 60 127
+lick 4020 76 60 127
+lick 4080 79 120 127
+lick 4200 77 120 127
+lick 4320 -1 480 127
+lick 4800 81 120 127
+lick 4920 71 120 127
+lick 5040 72 120 127
+lick 5160 74 120 127
+lick 5280 65 120 127
+lick 5400 64 60 127
+lick 5460 60 60 127
+lick 5520 -1 120 127
+lick 5640 65 60 127
+lick 5700 64 60 127
+lick 5760 72 60 127
+lick 5820 73 60 127
+lick 5880 67 60 127
+lick 5940 63 60 127
+lick 6000 60 60 127
+lick 6060 66 60 127
+lick 6120 60 60 127
+lick 6180 64 60 127
+lick 6240 65 60 127
+lick 6300 69 60 127
+lick 6360 -1 300 127
+lick 6660 60 60 127
+# rectified size 6720
+rectified 0 -1 300 127
+rectified 300 81 60 127
+rectified 360 -1 120 127
+rectified 480 72 240 127
+rectified 720 64 180 127
+rectified 900 67 60 127
+rectified 960 70 240 127
+rectified 1200 64 180 127
+rectified 1380 67 60 127
+rectified 1440 64 180 127
+rectified 1620 63 60 127
+rectified 1680 64 60 127
+rectified 1740 67 60 127
+rectified 1800 -1 60 127
+rectified 1860 64 60 127
+rectified 1920 69 60 127
+rectified 1980 72 60 127
+rectified 2040 70 60 127
+rectified 2100 69 60 127
+rectified 2160 73 60 127
+rectified 2220 72 60 127
+rectified 2280 70 60 127
+rectified 2340 69 60 127
+rectified 2400 -1 480 127
+rectified 2880 72 120 127
+rectified 3000 77 120 127
+rectified 3120 73 180 127
+rectified 3300 72 60 127
+rectified 3360 70 180 127
+rectified 3540 67 60 127
+rectified 3600 70 60 127
+rectified 3660 60 60 127
+rectified 3720 -1 60 127
+rectified 3780 66 60 127
+rectified 3840 67 60 127
+rectified 3900 70 60 127
+rectified 3960 72 60 127
+rectified 4020 76 60 127
+rectified 4080 79 120 127
+rectified 4200 76 120 127
+rectified 4320 -1 480 127
+rectified 4800 81 120 127
+rectified 4920 71 120 127
+rectified 5040 72 240 127
+rectified 5280 65 120 127
+rectified 5400 64 60 127
+rectified 5460 60 60 127
+rectified 5520 -1 120 127
+rectified 5640 65 60 127
+rectified 5700 64 60 127
+rectified 5760 72 120 127
+rectified 5880 67 60 127
+rectified 5940 64 60 127
+rectified 6000 60 60 127
+rectified 6060 67 60 127
+rectified 6120 60 60 127
+rectified 6180 64 60 127
+rectified 6240 65 60 127
+rectified 6300 69 60 127
+rectified 6360 -1 300 127
+rectified 6660 60 60 127
+# status Grammar loaded: /Users/srmorin/src/Impro-Visor/ImprovisorApp/Testing/.build/home/impro-visor-version-10.2-files/grammars/GrantGreen.grammar
+# status Grammar loaded with companion soloist file: /Users/srmorin/src/Impro-Visor/ImprovisorApp/Testing/.build/home/impro-visor-version-10.2-files/grammars/GrantGreen.soloist
+# status There was an IO exception reading the soloist file: /Users/srmorin/src/Impro-Visor/ImprovisorApp/Testing/.build/home/impro-visor-version-10.2-files/grammars/GrantGreen.soloist java.io.InvalidClassException: imp.data.Part; local class incompatible: stream classdesc serialVersionUID = 5647748058147845518, local class serialVersionUID = -903598878442708210
+# status There was an IO exception reading the soloist file: /Users/srmorin/src/Impro-Visor/ImprovisorApp/Testing/.build/home/impro-visor-version-10.2-files/grammars/GrantGreen.soloist java.io.InvalidClassException: imp.data.Part; local class incompatible: stream classdesc serialVersionUID = 5647748058147845518, local class serialVersionUID = -903598878442708210
+# status Loaded soloist file: /Users/srmorin/src/Impro-Visor/ImprovisorApp/Testing/.build/home/impro-visor-version-10.2-files/grammars/GrantGreen.soloist

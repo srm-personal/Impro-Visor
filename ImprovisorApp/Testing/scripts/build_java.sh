@@ -45,6 +45,12 @@ find "$BUILD/javasrc/imp" -name "*.java" -print0 | xargs -0 perl -pi -e '
   s/\bnew\s+(java\.util\.)?Random\(\s*\)/imp.harness.Rng.get()/g;
   s/\bCollections\.shuffle\(\s*(\w+)\s*\)/Collections.shuffle($1, imp.harness.Rng.get())/g;
 '
+# 1b. Solo generation without a window (BUG_LOG O-06, option B): the solo code
+# asks the Notate JFrame for a handful of values; send those calls to
+# imp.harness.Hooks instead. Mechanical; engine logic untouched.
+perl -pi -e 's/\bnotate\.(\w+)\(/imp.harness.Hooks.$1(/g' \
+  "$BUILD/javasrc/imp/lickgen/LickGen.java" "$BUILD/javasrc/imp/lickgen/Grammar.java"
+
 # 2. Headless overrides and the driver itself.
 rsync -a "$TESTING/java-driver/overrides/" "$BUILD/javasrc/"
 rsync -a "$TESTING/java-driver/imp/" "$BUILD/javasrc/imp/"

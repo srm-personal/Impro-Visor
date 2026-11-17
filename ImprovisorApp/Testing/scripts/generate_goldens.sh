@@ -4,6 +4,7 @@
 #   goldens/parse/*.tsv               element counts for every data file
 #   goldens/cases.tsv, tunes.tsv      the case matrix (make_cases.py)
 #   goldens/accompaniment/*.events.txt  one event dump per case
+#   goldens/solo-cases.tsv, solo/*.solo.txt  seeded grammar solos (3 stages each)
 # .mid files for listening go to Testing/.build/midi (not committed).
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -28,5 +29,8 @@ rm -rf "$B/render" && mkdir -p "$B/render"
 rm -rf "$G/accompaniment" "$B/midi" && mkdir -p "$G/accompaniment" "$B/midi"
 mv "$B/render"/*.events.txt "$G/accompaniment/"
 mv "$B/render"/*.mid "$B/midi/" 2>/dev/null || true
+"$HERE/generate_solo_goldens.sh"
+echo "solo goldens: $(ls "$G/solo" | wc -l | tr -d ' ') cases, $(grep -l '^# threw' "$G/solo"/*.txt | wc -l | tr -d ' ') where Java threw"
+
 echo "goldens: $(ls "$G/accompaniment" | wc -l | tr -d ' ') accompaniment cases, $(du -sh "$G/accompaniment" | cut -f1)"
 grep -l '^# threw' "$G/accompaniment"/*.txt | wc -l | xargs echo "cases where Java threw:"
